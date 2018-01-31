@@ -13,51 +13,73 @@
 #define N_SECONDS_LED           5
 
 #define ZERO                    0x0     // workaround for issue #527
-#define BLACK                   ZERO
-
-enum oclock_e {
-    O_OCLOCK = 0,
-    O_PAST,
-    O_TO
-};
-
-enum minute_e {
-    M_5 = 0,
-    M_10,
-    M_15,
-    M_20,
-    M_25,
-    M_30
-};
-
-enum hour_e {
-    H_1 = 0,
-    H_2,
-    H_3,
-    H_4,
-    H_5,
-    H_6,
-    H_7,
-    H_8,
-    H_9,
-    H_10,
-    H_11,
-    H_12
-};
+#define UNUSED_TWENTY_FIVE_LED  88
 
 struct time_s {
     uint8_t s;
     uint8_t m;
     uint8_t h;
-} now;
+};
+
+struct time_s now;
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
+typedef struct led_s {
+    uint8_t start;
+    uint8_t end;
 
-uint8_t oclock_led = 0;
-uint8_t second_led = 0;
-uint8_t minute_led = 0;
-uint8_t hour_led = 0;
+    led_s(uint8_t s, uint8_t e) {
+        start = s;
+        end = e;
+    }
+
+    void paint(uint32_t color) {
+        for(uint8_t i = start; i <= end; ++i) {
+            if(i == UNUSED_TWENTY_FIVE_LED)
+                continue;
+            pixels.setPixelColor(i, color);
+        }
+    }
+} led;
+
+led O_IT(104, 105);
+led O_IS(107, 108);
+led O_OCLOCK(5, 10);
+led O_PAST(60, 63);
+led O_TO(71, 72);
+
+led M_5(89, 92);
+led M_10(74, 76);
+led M_15(96, 102);
+led M_20(82, 87);
+led M_25(82, 92);
+led M_30(78, 81);
+
+led H[] = {
+    led(57, 59),    // H_1
+    led(54, 56),    // H_2
+    led(49, 53),    // H_3
+    led(38, 41),    // H_4
+    led(42, 45),    // H_5
+    led(46, 48),    // H_6
+    led(65, 69),    // H_7
+    led(16, 20),    // H_8
+    led(34, 37),    // H_9
+    led(13, 15),    // H_10
+    led(21, 26),    // H_11
+    led(27, 32)     // H_12
+};
+
+uint8_t seconds_led = 0;
+led minute_led = M_5;
+led hour_led = H[0];
+led oclock_led = O_OCLOCK;
+
+uint8_t last_second_led = seconds_led;
+led last_minute_led = minute_led;
+led last_hour_led = hour_led;
+led last_oclock_led = oclock_led;
 
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
@@ -72,11 +94,11 @@ uint32_t colors[] = {
         pixels.Color(255, 0,   0)       // red
 };
 
-int decToBcd(uint8_t val) {
+int dec2Bcd(uint8_t val) {
     return (val / 10 * 16) + (val % 10);
 }
 
-uint8_t bcdToDec(int val) {
+uint8_t bcd2dec(int val) {
     return (uint8_t) (val / 16 * 10) + (val % 16);
 }
 
@@ -86,16 +108,16 @@ void tick() {
     Wire.endTransmission();
 
     Wire.requestFrom(ADDRESS_DS1307, 7);
-    now.s = bcdToDec(Wire.read());
-    now.m = bcdToDec(Wire.read());
-    now.h = bcdToDec(Wire.read() & 0b111111);
+    now.s = bcd2dec(Wire.read());
+    now.m = bcd2dec(Wire.read());
+    now.h = bcd2dec(Wire.read() & 0b111111);
     Wire.read();
     Wire.read();
     Wire.read();
     Wire.read();
 }
 
-void onTimeButtonPressed() {
+void on_time_button_pressed() {
     tick();
     uint8_t h = now.h;
     uint8_t m = now.m + 1;
@@ -105,36 +127,42 @@ void onTimeButtonPressed() {
         m -= 60;
     }
 
-    if(h >= 24) {
+    if(h >= 24)
         h -= 24;
-    }
 
     Wire.beginTransmission(ADDRESS_DS1307);
     Wire.write(ZERO); //stop oscillator
 
-    Wire.write(decToBcd(0));
-    Wire.write(decToBcd(m));
-    Wire.write(decToBcd(h));
-    Wire.write(decToBcd(1));
-    Wire.write(decToBcd(1));
-    Wire.write(decToBcd(1));
-    Wire.write(decToBcd(0));
+    Wire.write(dec2Bcd(0));
+    Wire.write(dec2Bcd(m));
+    Wire.write(dec2Bcd(h));
+    Wire.write(dec2Bcd(1));
+    Wire.write(dec2Bcd(1));
+    Wire.write(dec2Bcd(1));
+    Wire.write(dec2Bcd(0));
 
     Wire.write(ZERO); //start oscillator
     Wire.endTransmission();
 }
 
-void onColorButtonPressed() {
+void on_color_button_pressed() {
     led_color_idx = (led_color_idx + 1) % N_COLORS;
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
 }
 
-void assignLeds() {
+inline void save_last_leds() {
+    last_second_led = seconds_led;
+    last_minute_led = minute_led;
+    last_hour_led = hour_led;
+    last_oclock_led = oclock_led;
+}
+
+void calculate_next_leds() {
     uint8_t hour = now.h;
     uint8_t min = now.m;
     uint8_t sec = now.s;
 
-    second_led = sec % N_SECONDS_LED;
+    seconds_led = sec % N_SECONDS_LED;
 
     if(min < 5) {                           //??:00 --> ??:04
         oclock_led = O_OCLOCK;
@@ -175,83 +203,51 @@ void assignLeds() {
         }
     }
 
-    while(hour >= 12) {
+    while(hour >= 12)
         hour -= 12;
-    }
-    hour_led = hour;
+    hour_led = H[hour];
 }
 
-void paintLeds(uint16_t lo, uint16_t hi, uint32_t color = colors[led_color_idx]) {
-    for(uint16_t i = lo; i <= hi; ++i) {
-        pixels.setPixelColor(i, color);
-    }
+uint32_t set_pixel_brightness(uint8_t brightness) {
+    float b = brightness / (float) 255;
+    return pixels.Color(
+            (uint8_t) ((colors[led_color_idx] >> 16) * b),
+            (uint8_t) ((colors[led_color_idx] >> 8 & 0xFF) * b),
+            (uint8_t) ((colors[led_color_idx] & 0xFF) * b));
 }
 
-void displayTime() {
-    paintLeds(0, N_PIXELS - 1, BLACK);
+inline bool equals(led lhs, led rhs) {
+    return lhs.start == rhs.start && lhs.end == rhs.end;
+}
 
-    paintLeds(104, 105); // leds of IT IS
-    paintLeds(107, 108); // are always on
+void display_time() {
+    O_IT.paint(colors[led_color_idx]);
+    O_IS.paint(colors[led_color_idx]);
 
-    paintLeds(0, 103, BLACK);
-    paintLeds(0, second_led); // move seconds led
+    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
+        uint32_t darken = set_pixel_brightness(255 - brightness);
+        uint32_t brighten = set_pixel_brightness(brightness);
 
-    switch(oclock_led) {
-        case O_OCLOCK:
-            paintLeds(5, 10); break;
-        case O_PAST:
-            paintLeds(60, 63); break;
-        case O_TO:
-            paintLeds(71, 72); break;
-        default: break;
+        if(last_second_led != seconds_led) {
+            pixels.setPixelColor(last_second_led, darken);
+            pixels.setPixelColor(seconds_led, brighten);
+        }
+        if(!equals(last_minute_led, minute_led)) {
+            last_minute_led.paint(darken);
+            minute_led.paint(brighten);
+        }
+        if(!equals(last_hour_led, hour_led)) {
+            last_hour_led.paint(darken);
+            hour_led.paint(brighten);
+        }
+        if(!equals(last_oclock_led, oclock_led)) {
+            last_oclock_led.paint(darken);
+            oclock_led.paint(brighten);
+        }
+
+        pixels.show();
+        delayMicroseconds(700);
     }
-
-    switch(minute_led) {
-        case M_25:
-        case M_5:
-            paintLeds(89, 92);
-            if(minute_led == M_5)
-                break;
-        case M_20:
-            paintLeds(82, 87); break;
-        case M_10:
-            paintLeds(74, 76); break;
-        case M_15:
-            paintLeds(96, 102); break;
-        case M_30:
-            paintLeds(78, 81); break;
-        default: break;
-    }
-
-    switch(hour_led) {
-        case H_1:
-            paintLeds(57, 59); break;
-        case H_2:
-            paintLeds(54, 56); break;
-        case H_3:
-            paintLeds(49, 53); break;
-        case H_4:
-            paintLeds(38, 41); break;
-        case H_5:
-            paintLeds(42, 45); break;
-        case H_6:
-            paintLeds(46, 48); break;
-        case H_7:
-            paintLeds(65, 69); break;
-        case H_8:
-            paintLeds(16, 20); break;
-        case H_9:
-            paintLeds(34, 37); break;
-        case H_10:
-            paintLeds(13, 15); break;
-        case H_11:
-            paintLeds(21, 26); break;
-        case H_12:
-            paintLeds(27, 32); break;
-        default: break;
-    }
-
-    pixels.show();
 }
 
 void setup() {
@@ -262,9 +258,8 @@ void setup() {
 
     // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
-    if(led_color_idx > (N_COLORS - 1)) {
+    if(led_color_idx > (N_COLORS - 1))
         led_color_idx = 0;
-    }
 
     pixels.begin();
 }
@@ -272,15 +267,16 @@ void setup() {
 
 void loop() {
     tick();
-    assignLeds();
-    displayTime();
+    save_last_leds();
+    calculate_next_leds();
+    display_time();
 
     if(digitalRead(PIN_COLOR_BUTTON)) {
-        onColorButtonPressed();
+        on_color_button_pressed();
         delay(500);
     }
     if(digitalRead(PIN_TIME_BUTTON)) {
-        onTimeButtonPressed();
+        on_time_button_pressed();
         delay(50);
     }
 }
