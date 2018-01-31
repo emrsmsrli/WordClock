@@ -28,9 +28,10 @@
 *.a
 *.lib
 
+/.idea
+
 # Executables
 *.exe
-*.out
 *.app
 ### CMake template
 CMakeCache.txt
