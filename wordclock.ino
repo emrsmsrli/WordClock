@@ -8,12 +8,12 @@
 #define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
 #define PIN_NEOPIXELS           PIN4
 
-#define N_PIXELS                115
+#define N_PIXELS                116
 #define N_COLORS                7
 #define N_SECONDS_LED           5
 
 #define ZERO                    0x0     // workaround for issue #527
-#define UNUSED_TWENTY_FIVE_LED  88
+#define UNUSED_TWENTY_FIVE_LED  89
 
 struct time_s {
     uint8_t s;
@@ -43,32 +43,32 @@ typedef struct led_s {
     }
 } led;
 
-led O_IT(104, 105);
-led O_IS(107, 108);
-led O_OCLOCK(5, 10);
-led O_PAST(60, 63);
-led O_TO(71, 72);
+led O_IT(105, 106);
+led O_IS(108, 109);
+led O_OCLOCK(6, 11);
+led O_PAST(61, 64);
+led O_TO(72, 73);
 
-led M_5(89, 92);
-led M_10(74, 76);
-led M_15(96, 102);
-led M_20(82, 87);
-led M_25(82, 92);
-led M_30(78, 81);
+led M_5(90, 93);
+led M_10(75, 77);
+led M_15(97, 103);
+led M_20(83, 88);
+led M_25(83, 93);
+led M_30(79, 82);
 
 led H[] = {
-    led(57, 59),    // H_1
-    led(54, 56),    // H_2
-    led(49, 53),    // H_3
-    led(38, 41),    // H_4
-    led(42, 45),    // H_5
-    led(46, 48),    // H_6
-    led(65, 69),    // H_7
-    led(16, 20),    // H_8
-    led(34, 37),    // H_9
-    led(13, 15),    // H_10
-    led(21, 26),    // H_11
-    led(27, 32)     // H_12
+    led(58, 60),    // H_1
+    led(55, 57),    // H_2
+    led(50, 54),    // H_3
+    led(39, 42),    // H_4
+    led(43, 46),    // H_5
+    led(47, 49),    // H_6
+    led(66, 70),    // H_7
+    led(17, 21),    // H_8
+    led(35, 38),    // H_9
+    led(14, 16),    // H_10
+    led(22, 27),    // H_11
+    led(28, 33)     // H_12
 };
 
 uint8_t seconds_led = 0;
@@ -229,8 +229,8 @@ void display_time() {
         uint32_t brighten = set_pixel_brightness(brightness);
 
         if(last_second_led != seconds_led) {
-            pixels.setPixelColor(last_second_led, darken);
-            pixels.setPixelColor(seconds_led, brighten);
+            pixels.setPixelColor(last_second_led + 1, darken);
+            pixels.setPixelColor(seconds_led + 1, brighten);
         }
         if(!equals(last_minute_led, minute_led)) {
             last_minute_led.paint(darken);
