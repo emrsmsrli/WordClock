@@ -13,39 +13,39 @@
 #define N_SECONDS_LED           5
 
 #define ZERO                    0x0     // workaround for issue #527
-#define UNUSED_LED_FOR_25       89
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
 struct time_s {
     uint8_t s;
     uint8_t m;
     uint8_t h;
-};
+} now;
 
-struct time_s now;
-
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
-
-typedef struct led_s {
+class led {
     uint8_t start;
     uint8_t end;
 
-    led_s(uint8_t s, uint8_t e) {
+public:
+    led(uint8_t s, uint8_t e) {
         start = s;
         end = e;
     }
 
     void paint(uint32_t color) {
         for(uint8_t i = start; i <= end; ++i) {
-            if(i == UNUSED_LED_FOR_25)
-                continue;
             pixels.setPixelColor(i, color);
         }
     }
 
-    bool operator!=(const struct led_s& other) {
-        return start != other.start || end != other.end;
+    bool operator==(const led& other) {
+        return start == other.start && end == other.end;
     }
-} led;
+
+    bool operator!=(const led& other) {
+        return !(this == other);
+    }
+};
 
 led O_OCLOCK(6, 11);
 led O_PAST(61, 64);
@@ -229,8 +229,14 @@ void display_time() {
             pixels.setPixelColor(seconds_led + 1, brighten);
         }
         if(last_minute_led != minute_led) {
-            last_minute_led.paint(darken);
-            minute_led.paint(brighten);
+            if(last_minute_led == M_20 && minute_led == M_25) {
+                M_5.paint(brighten);
+            } else if(last_minute_led == M_25 && minute_led == M_20) {
+                M_5.paint(darken);
+            } else {
+                last_minute_led.paint(darken);
+                minute_led.paint(brighten);
+            }
         }
         if(last_hour_led != hour_led) {
             last_hour_led.paint(darken);
