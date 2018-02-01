@@ -43,7 +43,7 @@ public:
     }
 
     bool operator!=(const led& other) {
-        return !(this == other);
+        return start != other.start || end != other.end;
     }
 };
 
