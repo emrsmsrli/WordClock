@@ -12,7 +12,14 @@
 #define N_COLORS                7
 #define N_SECONDS_LED           5
 
+#define COLOR_SHIFT_DELAY_US    400
+#define TIME_CHANGE_DELAY_US    800
+
+#define COLOR_ALLOWED_REPEAT_MS 500
+#define TIME_ALLOWED_REPEAT_MS  50
+
 #define ZERO                    0x0     // workaround for issue #527
+#define UNUSED_LED_FOR_25       89
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
@@ -34,6 +41,8 @@ public:
 
     void paint(uint32_t color) {
         for(uint8_t i = start; i <= end; ++i) {
+            if(i == UNUSED_LED_FOR_25)
+                continue;
             pixels.setPixelColor(i, color);
         }
     }
@@ -47,6 +56,8 @@ public:
     }
 };
 
+led IT(105, 106);
+led IS(108, 109);
 led O_OCLOCK(6, 11);
 led O_PAST(61, 64);
 led O_TO(72, 73);
@@ -85,16 +96,19 @@ led last_oclock_led = oclock_led;
 
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
-        pixels.Color(247, 139, 15),     // orange
-        // pixels.Color(71,  5,   20),     // claret
+    pixels.Color(247, 139, 15),     // orange
+    // pixels.Color(71,  5,   20),     // claret
 
-        pixels.Color(127, 127, 0),      // yellow
-        pixels.Color(127, 0,   127),    // magenta
-        pixels.Color(0,   127, 127),    // cyan
-        pixels.Color(0,   0,   255),    // blue
-        pixels.Color(0,   255, 0),      // green
-        pixels.Color(255, 0,   0)       // red
+    pixels.Color(127, 127, 0),      // yellow
+    pixels.Color(127, 0,   127),    // magenta
+    pixels.Color(0,   127, 127),    // cyan
+    pixels.Color(0,   0,   255),    // blue
+    pixels.Color(0,   255, 0),      // green
+    pixels.Color(255, 0,   0)       // red
 };
+
+unsigned long min_time_button_wait_ms = 0;
+unsigned long min_color_button_wait_ms = 0;
 
 int dec2Bcd(uint8_t val) {
     return (val / 10 * 16) + (val % 10);
@@ -119,7 +133,52 @@ void tick() {
     Wire.read();
 }
 
+uint32_t set_pixel_brightness(uint8_t brightness) {
+    uint32_t color = colors[led_color_idx];
+    float b = brightness / (float) 255;
+    return pixels.Color(
+            (uint8_t) ((color >> 16) * b),
+            (uint8_t) ((color >> 8 & 0xFF) * b),
+            (uint8_t) ((color & 0xFF) * b));
+}
+
+void fade_in() {
+    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
+        uint32_t brighten = set_pixel_brightness(brightness);
+
+        IT.paint(brighten);
+        IS.paint(brighten);
+        pixels.setPixelColor(seconds_led + 1, brighten);
+        minute_led.paint(brighten);
+        hour_led.paint(brighten);
+        oclock_led.paint(brighten);
+
+        pixels.show();
+        delayMicroseconds(COLOR_SHIFT_DELAY_US);
+    }
+}
+
+void fade_out() {
+    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
+        uint32_t darken = set_pixel_brightness(255 - brightness);
+
+        IT.paint(darken);
+        IS.paint(darken);
+        pixels.setPixelColor(seconds_led + 1, darken);
+        minute_led.paint(darken);
+        hour_led.paint(darken);
+        oclock_led.paint(darken);
+
+        pixels.show();
+        delayMicroseconds(COLOR_SHIFT_DELAY_US);
+    }
+}
+
 void on_time_button_pressed() {
+    unsigned long now_ms = millis();
+    if(now_ms - min_time_button_wait_ms < TIME_ALLOWED_REPEAT_MS)
+        return;
+
     tick();
     uint8_t h = now.h;
     uint8_t m = now.m + 1;
@@ -149,8 +208,16 @@ void on_time_button_pressed() {
 }
 
 void on_color_button_pressed() {
+    unsigned long now_ms = millis();
+    if(now_ms - min_color_button_wait_ms < COLOR_ALLOWED_REPEAT_MS)
+        return;
+
+    fade_out();
+
     led_color_idx = (led_color_idx + 1) % N_COLORS;
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
+
+    fade_in();
 }
 
 inline void save_last_leds() {
@@ -211,14 +278,6 @@ void calculate_next_leds() {
     hour_led = H[hour];
 }
 
-uint32_t set_pixel_brightness(uint8_t brightness) {
-    float b = brightness / (float) 255;
-    return pixels.Color(
-            (uint8_t) ((colors[led_color_idx] >> 16) * b),
-            (uint8_t) ((colors[led_color_idx] >> 8 & 0xFF) * b),
-            (uint8_t) ((colors[led_color_idx] & 0xFF) * b));
-}
-
 void display_time() {
     for(uint16_t brightness = 0; brightness <= 255; brightness++) {
         uint32_t darken = set_pixel_brightness(255 - brightness);
@@ -248,7 +307,7 @@ void display_time() {
         }
 
         pixels.show();
-        delayMicroseconds(700);
+        delayMicroseconds(TIME_CHANGE_DELAY_US);
     }
 }
 
@@ -258,6 +317,9 @@ void setup() {
     pinMode(PIN_TIME_BUTTON, INPUT);
     pinMode(PIN_COLOR_BUTTON, INPUT);
 
+    min_color_button_wait_ms = millis();
+    min_time_button_wait_ms = min_color_button_wait_ms;
+
     // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
     if(led_color_idx > (N_COLORS - 1))
@@ -266,8 +328,9 @@ void setup() {
     pixels.begin();
     pixels.clear();
 
-    (led(105, 106)).paint(colors[led_color_idx]);   // IT
-    (led(108, 109)).paint(colors[led_color_idx]);   // IS
+    tick();
+    calculate_next_leds();
+    fade_in();
 }
 
 void loop() {
@@ -276,12 +339,8 @@ void loop() {
     calculate_next_leds();
     display_time();
 
-    if(digitalRead(PIN_COLOR_BUTTON)) {
+    if(digitalRead(PIN_COLOR_BUTTON))
         on_color_button_pressed();
-        delay(500);
-    }
-    if(digitalRead(PIN_TIME_BUTTON)) {
+    if(digitalRead(PIN_TIME_BUTTON))
         on_time_button_pressed();
-        delay(50);
-    }
 }
