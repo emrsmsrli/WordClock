@@ -13,7 +13,7 @@
 #define N_SECONDS_LED           5
 
 #define ZERO                    0x0     // workaround for issue #527
-#define UNUSED_TWENTY_FIVE_LED  89
+#define UNUSED_LED_FOR_25       89
 
 struct time_s {
     uint8_t s;
@@ -36,15 +36,17 @@ typedef struct led_s {
 
     void paint(uint32_t color) {
         for(uint8_t i = start; i <= end; ++i) {
-            if(i == UNUSED_TWENTY_FIVE_LED)
+            if(i == UNUSED_LED_FOR_25)
                 continue;
             pixels.setPixelColor(i, color);
         }
     }
+
+    bool operator!=(const struct led_s& other) {
+        return start != other.start || end != other.end;
+    }
 } led;
 
-led O_IT(105, 106);
-led O_IS(108, 109);
 led O_OCLOCK(6, 11);
 led O_PAST(61, 64);
 led O_TO(72, 73);
@@ -127,8 +129,9 @@ void on_time_button_pressed() {
         m -= 60;
     }
 
-    if(h >= 24)
+    if(h >= 24) {
         h -= 24;
+    }
 
     Wire.beginTransmission(ADDRESS_DS1307);
     Wire.write(ZERO); //stop oscillator
@@ -216,14 +219,7 @@ uint32_t set_pixel_brightness(uint8_t brightness) {
             (uint8_t) ((colors[led_color_idx] & 0xFF) * b));
 }
 
-inline bool equals(led lhs, led rhs) {
-    return lhs.start == rhs.start && lhs.end == rhs.end;
-}
-
 void display_time() {
-    O_IT.paint(colors[led_color_idx]);
-    O_IS.paint(colors[led_color_idx]);
-
     for(uint16_t brightness = 0; brightness <= 255; brightness++) {
         uint32_t darken = set_pixel_brightness(255 - brightness);
         uint32_t brighten = set_pixel_brightness(brightness);
@@ -232,15 +228,15 @@ void display_time() {
             pixels.setPixelColor(last_second_led + 1, darken);
             pixels.setPixelColor(seconds_led + 1, brighten);
         }
-        if(!equals(last_minute_led, minute_led)) {
+        if(last_minute_led != minute_led) {
             last_minute_led.paint(darken);
             minute_led.paint(brighten);
         }
-        if(!equals(last_hour_led, hour_led)) {
+        if(last_hour_led != hour_led) {
             last_hour_led.paint(darken);
             hour_led.paint(brighten);
         }
-        if(!equals(last_oclock_led, oclock_led)) {
+        if(last_oclock_led != oclock_led) {
             last_oclock_led.paint(darken);
             oclock_led.paint(brighten);
         }
@@ -262,8 +258,11 @@ void setup() {
         led_color_idx = 0;
 
     pixels.begin();
-}
+    pixels.clear();
 
+    (led(105, 106)).paint(colors[led_color_idx]);   // IT
+    (led(108, 109)).paint(colors[led_color_idx]);   // IS
+}
 
 void loop() {
     tick();
