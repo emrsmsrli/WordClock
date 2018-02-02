@@ -14,7 +14,8 @@
 
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
-#define BUTTON_REPEAT_ALLOW_MS  500
+#define COLOR_REPEAT_ALLOW_MS   500
+#define TIME_REPEAT_ALLOW_MS    250
 
 #define ZERO                    0x0     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
@@ -25,7 +26,9 @@ struct time_s {
     uint8_t s;
     uint8_t m;
     uint8_t h;
-} now;
+};
+
+struct time_s now;
 
 class led {
     uint8_t start;
@@ -166,7 +169,7 @@ void set_brightness(uint8_t (*setting)(uint16_t)) {
 
 void on_time_button_pressed() {
     unsigned long now_ms = millis();
-    if(now_ms - min_time_button_wait_ms < BUTTON_REPEAT_ALLOW_MS)
+    if(now_ms - min_time_button_wait_ms < TIME_REPEAT_ALLOW_MS)
         return;
     min_time_button_wait_ms = now_ms;
 
@@ -199,7 +202,7 @@ void on_time_button_pressed() {
 
 void on_color_button_pressed() {
     unsigned long now_ms = millis();
-    if(now_ms - min_color_button_wait_ms < BUTTON_REPEAT_ALLOW_MS)
+    if(now_ms - min_color_button_wait_ms < COLOR_REPEAT_ALLOW_MS)
         return;
     min_color_button_wait_ms = now_ms;
 
