@@ -140,32 +140,24 @@ uint32_t set_pixel_brightness(uint8_t brightness) {
             (uint8_t) ((color & 0xFF) * b));
 }
 
-void fade_in() {
-    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
-        uint32_t brighten = set_pixel_brightness(brightness);
-
-        IT.paint(brighten);
-        IS.paint(brighten);
-        pixels.setPixelColor(seconds_led + 1, brighten);
-        minute_led.paint(brighten);
-        hour_led.paint(brighten);
-        oclock_led.paint(brighten);
-
-        pixels.show();
-        delayMicroseconds(COLOR_SHIFT_DELAY_US);
-    }
+inline uint8_t bright(uint16_t b) {
+    return (uint8_t) b;
 }
 
-void fade_out() {
-    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
-        uint32_t darken = set_pixel_brightness(255 - brightness);
+inline uint8_t dim(uint16_t b) {
+    return 255 - (uint8_t) b;
+}
 
-        IT.paint(darken);
-        IS.paint(darken);
-        pixels.setPixelColor(seconds_led + 1, darken);
-        minute_led.paint(darken);
-        hour_led.paint(darken);
-        oclock_led.paint(darken);
+void set_brightness(uint8_t (*setting)(uint16_t)) {
+    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
+        uint32_t b = set_pixel_brightness(setting(brightness));
+
+        IT.paint(b);
+        IS.paint(b);
+        pixels.setPixelColor(seconds_led + 1, b);
+        minute_led.paint(b);
+        hour_led.paint(b);
+        oclock_led.paint(b);
 
         pixels.show();
         delayMicroseconds(COLOR_SHIFT_DELAY_US);
@@ -212,12 +204,12 @@ void on_color_button_pressed() {
         return;
     min_color_button_wait_ms = now_ms;
 
-    fade_out();
+    set_brightness(dim);
 
     led_color_idx = (led_color_idx + 1) % N_COLORS;
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
 
-    fade_in();
+    set_brightness(bright);
 }
 
 inline void save_last_leds() {
@@ -330,7 +322,7 @@ void setup() {
 
     tick();
     calculate_next_leds();
-    fade_in();
+    set_brightness(bright);
 }
 
 void loop() {
