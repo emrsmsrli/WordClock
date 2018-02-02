@@ -170,7 +170,6 @@ void on_time_button_pressed() {
         return;
     min_time_button_wait_ms = now_ms;
 
-    tick();
     uint8_t h = now.h;
     uint8_t m = now.m + 1;
 
