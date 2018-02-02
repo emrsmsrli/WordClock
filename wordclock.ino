@@ -14,9 +14,7 @@
 
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
-
-#define COLOR_ALLOWED_REPEAT_MS 500
-#define TIME_ALLOWED_REPEAT_MS  50
+#define BUTTON_REPEAT_ALLOW_MS  500
 
 #define ZERO                    0x0     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
@@ -176,8 +174,9 @@ void fade_out() {
 
 void on_time_button_pressed() {
     unsigned long now_ms = millis();
-    if(now_ms - min_time_button_wait_ms < TIME_ALLOWED_REPEAT_MS)
+    if(now_ms - min_time_button_wait_ms < BUTTON_REPEAT_ALLOW_MS)
         return;
+    min_time_button_wait_ms = now_ms;
 
     tick();
     uint8_t h = now.h;
@@ -209,8 +208,9 @@ void on_time_button_pressed() {
 
 void on_color_button_pressed() {
     unsigned long now_ms = millis();
-    if(now_ms - min_color_button_wait_ms < COLOR_ALLOWED_REPEAT_MS)
+    if(now_ms - min_color_button_wait_ms < BUTTON_REPEAT_ALLOW_MS)
         return;
+    min_color_button_wait_ms = now_ms;
 
     fade_out();
 
