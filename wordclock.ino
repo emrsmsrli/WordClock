@@ -14,8 +14,6 @@
 
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
-#define COLOR_REPEAT_ALLOW_MS   500
-#define TIME_REPEAT_ALLOW_MS    250
 
 #define ZERO                    0x0     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
@@ -108,9 +106,6 @@ uint32_t colors[] = {
     pixels.Color(255, 0,   0)       // red
 };
 
-unsigned long min_time_button_wait_ms = 0;
-unsigned long min_color_button_wait_ms = 0;
-
 int dec2Bcd(uint8_t val) {
     return (val / 10 * 16) + (val % 10);
 }
@@ -168,11 +163,6 @@ void set_brightness(uint8_t (*setting)(uint16_t)) {
 }
 
 void on_time_button_pressed() {
-    unsigned long now_ms = millis();
-    if(now_ms - min_time_button_wait_ms < TIME_REPEAT_ALLOW_MS)
-        return;
-    min_time_button_wait_ms = now_ms;
-
     uint8_t h = now.h;
     uint8_t m = now.m + 1;
 
@@ -201,11 +191,6 @@ void on_time_button_pressed() {
 }
 
 void on_color_button_pressed() {
-    unsigned long now_ms = millis();
-    if(now_ms - min_color_button_wait_ms < COLOR_REPEAT_ALLOW_MS)
-        return;
-    min_color_button_wait_ms = now_ms;
-
     set_brightness(dim);
 
     led_color_idx = (led_color_idx + 1) % N_COLORS;
@@ -310,9 +295,6 @@ void setup() {
 
     pinMode(PIN_TIME_BUTTON, INPUT);
     pinMode(PIN_COLOR_BUTTON, INPUT);
-
-    min_color_button_wait_ms = millis();
-    min_time_button_wait_ms = min_color_button_wait_ms;
 
     // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
