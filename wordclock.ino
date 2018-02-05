@@ -2,8 +2,11 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 
+#define ZERO                    0x0     // workaround for issue #527
+#define UNUSED_LED_FOR_25       89
+
 #define ADDRESS_DS1307          0x68
-#define ADDRESS_EEPROM_COLOR    0x0
+#define ADDRESS_EEPROM_COLOR    ZERO
 #define PIN_TIME_BUTTON         PIN3    // FIXME tick 2
 #define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
 #define PIN_NEOPIXELS           PIN4
@@ -14,9 +17,6 @@
 
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
-
-#define ZERO                    0x0     // workaround for issue #527
-#define UNUSED_LED_FOR_25       89
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
@@ -61,6 +61,7 @@ led O_OCLOCK(6, 11);
 led O_PAST(61, 64);
 led O_TO(72, 73);
 
+led M_NONE(0, 0);
 led M_5(90, 93);
 led M_10(75, 77);
 led M_15(97, 103);
@@ -162,6 +163,15 @@ void set_brightness(uint8_t (*setting)(uint16_t)) {
     }
 }
 
+void on_color_button_pressed() {
+    set_brightness(dim);
+
+    led_color_idx = (led_color_idx + 1) % N_COLORS;
+    EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
+
+    set_brightness(bright);
+}
+
 void on_time_button_pressed() {
     uint8_t h = now.h;
     uint8_t m = now.m + 1;
@@ -176,7 +186,7 @@ void on_time_button_pressed() {
     }
 
     Wire.beginTransmission(ADDRESS_DS1307);
-    Wire.write(ZERO); //stop oscillator
+    Wire.write(ZERO);       // stop oscillator
 
     Wire.write(dec2Bcd(0));
     Wire.write(dec2Bcd(m));
@@ -186,17 +196,8 @@ void on_time_button_pressed() {
     Wire.write(dec2Bcd(1));
     Wire.write(dec2Bcd(0));
 
-    Wire.write(ZERO); //start oscillator
+    Wire.write(ZERO);       // start oscillator
     Wire.endTransmission();
-}
-
-void on_color_button_pressed() {
-    set_brightness(dim);
-
-    led_color_idx = (led_color_idx + 1) % N_COLORS;
-    EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
-
-    set_brightness(bright);
 }
 
 inline void save_last_leds() {
@@ -213,42 +214,37 @@ void calculate_next_leds() {
 
     seconds_led = sec % N_SECONDS_LED;
 
-    if(min < 5) {                           //??:00 --> ??:04
+    if(min < 5) {                   /// 0 - 5
         oclock_led = O_OCLOCK;
-    } else if(min < 35) {                   //??:05 --> ??:34
+        minute_led = M_NONE;
+    } else if(min < 35) {           /// 5 - 35
         oclock_led = O_PAST;
-        if(min >= 30) {                     //??:30 --> ??:34
-            minute_led = M_30;
-        } else if(min >= 15 && min < 20) {  //??:15 --> ??:19
+        if(min < 10) {              // 5 - 10
+            minute_led = M_5;
+        } else if(min < 15) {       // 10 - 15
+            minute_led = M_10;
+        } else if(min < 20) {       // 15 - 20
             minute_led = M_15;
-        } else {
-            if(min >= 20) {                 //??:20 --> ??:29
-                minute_led = M_20;
-                if(min >= 25) {             //??:25 --> ??:29
-                    minute_led = M_25;
-                }
-            } else if(min >= 10) {          //??:10 --> ??:14
-                minute_led = M_10;
-            } else {                        //??:05 --> ??:09
-                minute_led = M_5;
-            }
+        } else if(min < 25) {       // 20 - 25
+            minute_led = M_20;
+        } else if(min < 30) {       // 25 - 30
+            minute_led = M_25;
+        } else {                    // 30 - 35
+            minute_led = M_30;
         }
-    } else {                                //??:35 --> ??:59
+    } else {                        /// 35 - 60
         hour = hour + 1;
         oclock_led = O_TO;
-        if(min >= 45 && min < 50) {         //??:45 --> ??:49
+        if(min < 40) {              // 35 - 40
+            minute_led = M_25;
+        } else if(min < 45) {       // 40 - 45
+            minute_led = M_20;
+        } else if(min < 50) {       // 45 - 50
             minute_led = M_15;
-        } else {
-            if(min < 45) {                  //??:35 --> ??:44
-                minute_led = M_20;
-                if(min < 40) {              //??:35 --> ??:39
-                    minute_led = M_25;
-                }
-            } else if(min < 55) {           //??:50 --> ??:54
-                minute_led = M_10;
-            } else {                        //??:55 --> ??:59
-                minute_led = M_5;
-            }
+        } else if(min < 55) {       // 50 - 55
+            minute_led = M_10;
+        } else {                    // 55 - 60
+            minute_led = M_5;
         }
     }
 
@@ -258,6 +254,7 @@ void calculate_next_leds() {
 }
 
 void display_time() {
+    bool no_led_changed = true;
     for(uint16_t brightness = 0; brightness <= 255; brightness++) {
         uint32_t darken = set_pixel_brightness(255 - brightness);
         uint32_t brighten = set_pixel_brightness(brightness);
@@ -265,6 +262,7 @@ void display_time() {
         if(last_second_led != seconds_led) {
             pixels.setPixelColor(last_second_led + 1, darken);
             pixels.setPixelColor(seconds_led + 1, brighten);
+            no_led_changed = false;
         }
         if(last_minute_led != minute_led) {
             if(last_minute_led == M_20 && minute_led == M_25) {
@@ -272,18 +270,26 @@ void display_time() {
             } else if(last_minute_led == M_25 && minute_led == M_20) {
                 M_5.paint(darken);
             } else {
-                last_minute_led.paint(darken);
-                minute_led.paint(brighten);
+                if(last_minute_led != M_NONE)
+                    last_minute_led.paint(darken);
+                if(minute_led != M_NONE)
+                    minute_led.paint(brighten);
             }
+            no_led_changed = false;
         }
         if(last_hour_led != hour_led) {
             last_hour_led.paint(darken);
             hour_led.paint(brighten);
+            no_led_changed = false;
         }
         if(last_oclock_led != oclock_led) {
             last_oclock_led.paint(darken);
             oclock_led.paint(brighten);
+            no_led_changed = false;
         }
+
+        if(no_led_changed)
+            break;
 
         pixels.show();
         delayMicroseconds(TIME_CHANGE_DELAY_US);
