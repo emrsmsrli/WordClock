@@ -18,6 +18,9 @@
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
 
+#define NIGHT_MODE_START_H      22
+#define NIGHT_MODE_END_H        7
+
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
 struct time_s {
@@ -131,8 +134,12 @@ void tick() {
 }
 
 uint32_t set_pixel_brightness(uint8_t brightness) {
+    float night_mode_factor = 1.0;
+    if(now.h > NIGHT_MODE_START_H || now.h < NIGHT_MODE_END_H)
+        night_mode_factor = 0.4;
+
     uint32_t color = colors[led_color_idx];
-    float b = brightness / (float) 255;
+    float b = brightness / (float) 255 * night_mode_factor;
     return pixels.Color(
             (uint8_t) ((color >> 16) * b),
             (uint8_t) ((color >> 8 & 0xFF) * b),
