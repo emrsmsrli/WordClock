@@ -1,7 +1,6 @@
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
-#include <OneButton.h>
 
 #define ZERO                    0x0     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
@@ -18,6 +17,11 @@
 
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
+
+#define BTN_STATE_PRESSED       HIGH
+#define BTN_STATE_RELEASED      LOW
+#define BTN_DEBOUNCE_THRESHOLD  50
+#define BTN_CLICK_THRESHOLD     300
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
@@ -55,8 +59,95 @@ public:
     }
 };
 
-OneButton TIME_BUTTON(PIN_TIME_BUTTON, true);
-OneButton COLOR_BUTTON(PIN_COLOR_BUTTON, true);
+class Button {
+    enum State {
+        WAIT_PRESS = 0,
+        WAIT_RELEASE,
+        CLICKED_SINGLE,
+        CLICKED_DOUBLE
+    };
+
+    uint8_t pin;
+    uint8_t state;
+    volatile unsigned long start_time;
+    volatile unsigned long stop_time;
+    volatile bool single_clicked;
+    volatile bool double_clicked;
+
+    void(*single_click_action)();
+    void(*double_click_action)();
+
+public:
+    Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = nullptr) {
+        pin = _pin;
+        state = WAIT_PRESS;
+        start_time = 0;
+        stop_time = 0;
+        single_clicked = false;
+        double_clicked = false;
+        single_click_action = _single;
+        double_click_action = _double;
+        pinMode(pin, INPUT);
+        attachInterrupt((uint8_t) digitalPinToInterrupt(pin), _isr, FALLING);
+    }
+
+    void perform_clicks() {
+        noInterrupts();
+        if(single_clicked) {
+            single_clicked = false;
+            interrupts();
+            if(single_click_action) single_click_action();
+        } else if(double_clicked) {
+            double_clicked = false;
+            interrupts();
+            if(double_click_action) double_click_action();
+        }
+    }
+
+    void tick() {
+        unsigned long now = millis();
+        int32_t button_state = digitalRead(pin);
+
+        switch(state) {
+            case WAIT_PRESS:
+                if(button_state == BTN_STATE_PRESSED) {
+                    if(single_clicked || double_clicked)
+                        break;
+                    state = WAIT_RELEASE;
+                    start_time = now;
+                }
+                break;
+            case WAIT_RELEASE:
+                if(button_state == BTN_STATE_RELEASED && now - start_time < BTN_DEBOUNCE_THRESHOLD) {
+                    state = WAIT_PRESS;
+                } else if(button_state == BTN_STATE_RELEASED) {
+                    state = CLICKED_SINGLE;
+                    stop_time = now;
+                }
+                break;
+            case CLICKED_SINGLE:
+                if(now - start_time > BTN_CLICK_THRESHOLD) {
+                    single_clicked = true;
+                    state = WAIT_PRESS;
+                } else if(button_state == BTN_STATE_PRESSED && now - stop_time > BTN_DEBOUNCE_THRESHOLD) {
+                    state = CLICKED_DOUBLE;
+                    start_time = now;
+                }
+                break;
+            case CLICKED_DOUBLE:
+                if(button_state == BTN_STATE_RELEASED && now - start_time > BTN_DEBOUNCE_THRESHOLD) {
+                    single_clicked = false;
+                    double_clicked = true;
+                    state = WAIT_PRESS;
+                }
+            default:
+                break;
+        }
+    }
+};
+
+Button *TIME_BUTTON;
+Button *COLOR_BUTTON;
 
 LedArray IT(105, 106);
 LedArray IS(108, 109);
@@ -317,15 +408,8 @@ void display_time() {
 void setup() {
     Wire.begin();
 
-    pinMode(PIN_TIME_BUTTON, INPUT);
-    pinMode(PIN_COLOR_BUTTON, INPUT);
-
-    COLOR_BUTTON.setClickTicks(300);
-    TIME_BUTTON.setClickTicks(300);
-
-    COLOR_BUTTON.attachClick(on_color_button_pressed);
-    TIME_BUTTON.attachClick(on_time_button_pressed);
-    TIME_BUTTON.attachDoubleClick(on_time_button_double_pressed);
+    COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, COLOR_BUTTON->tick, on_color_button_pressed);
+    TIME_BUTTON = new Button(PIN_TIME_BUTTON, TIME_BUTTON->tick, on_time_button_pressed, on_time_button_double_pressed);
 
     // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
@@ -346,6 +430,6 @@ void loop() {
     calculate_next_leds();
     display_time();
 
-    COLOR_BUTTON.tick();
-    TIME_BUTTON.tick();
+    COLOR_BUTTON->perform_clicks();
+    TIME_BUTTON->perform_clicks();
 }
