@@ -18,8 +18,6 @@
 #define COLOR_SHIFT_DELAY_US    400
 #define TIME_CHANGE_DELAY_US    800
 
-#define BTN_STATE_PRESSED       HIGH
-#define BTN_STATE_RELEASED      LOW
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
 
@@ -62,8 +60,8 @@ public:
 
 class Button {
     enum State {
-        WAIT_PRESS = 0,
-        WAIT_RELEASE,
+        RELEASED = 0,
+        PRESSED,
         CLICKED_SINGLE,
         CLICKED_DOUBLE
     };
@@ -81,7 +79,7 @@ class Button {
 public:
     Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = NULL) {
         pin = _pin;
-        state = WAIT_PRESS;
+        state = RELEASED;
         start_time = 0;
         stop_time = 0;
         single_clicked = false;
@@ -105,23 +103,23 @@ public:
         }
     }
 
-    void tick() {
+    void update() {
         unsigned long now = millis();
-        int32_t button_state = digitalRead(pin);
+        int32_t button_pressed = digitalRead(pin);
 
         switch(state) {
-            case WAIT_PRESS:
-                if(button_state == BTN_STATE_PRESSED) {
+            case RELEASED:
+                if(button_pressed) {
                     if(single_clicked || double_clicked)
                         break;
-                    state = WAIT_RELEASE;
+                    state = PRESSED;
                     start_time = now;
                 }
                 break;
-            case WAIT_RELEASE:
-                if(button_state == BTN_STATE_RELEASED && now - start_time < BTN_DEBOUNCE_THRESHOLD) {
-                    state = WAIT_PRESS;
-                } else if(button_state == BTN_STATE_RELEASED) {
+            case PRESSED:
+                if(!button_pressed && now - start_time < BTN_DEBOUNCE_THRESHOLD) {
+                    state = RELEASED;
+                } else if(!button_pressed) {
                     state = CLICKED_SINGLE;
                     stop_time = now;
                 }
@@ -129,17 +127,17 @@ public:
             case CLICKED_SINGLE:
                 if(now - start_time > BTN_CLICK_THRESHOLD) {
                     single_clicked = true;
-                    state = WAIT_PRESS;
-                } else if(button_state == BTN_STATE_PRESSED && now - stop_time > BTN_DEBOUNCE_THRESHOLD) {
+                    state = RELEASED;
+                } else if(button_pressed && now - stop_time > BTN_DEBOUNCE_THRESHOLD) {
                     state = CLICKED_DOUBLE;
                     start_time = now;
                 }
                 break;
             case CLICKED_DOUBLE:
-                if(button_state == BTN_STATE_RELEASED && now - start_time > BTN_DEBOUNCE_THRESHOLD) {
+                if(!button_pressed && now - start_time > BTN_DEBOUNCE_THRESHOLD) {
                     single_clicked = false;
                     double_clicked = true;
-                    state = WAIT_PRESS;
+                    state = RELEASED;
                 }
             default:
                 break;
@@ -311,11 +309,11 @@ void on_time_button_double_pressed() {
 }
 
 void color_isr() {
-    COLOR_BUTTON->tick();
+    COLOR_BUTTON->update();
 }
 
 void time_isr() {
-    TIME_BUTTON->tick();
+    TIME_BUTTON->update();
 }
 
 inline void save_last_leds() {
