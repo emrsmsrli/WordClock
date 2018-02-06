@@ -15,11 +15,10 @@
 #define N_COLORS                7
 #define N_SECONDS_LED           5
 
-#define COLOR_SHIFT_DELAY_US    400
-#define TIME_CHANGE_DELAY_US    800
-
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
+
+#define SMOOTH_STEP(x) ((x) * (x) * (3 - 2 * (x)))
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
@@ -225,23 +224,23 @@ void tick() {
 
 uint32_t set_pixel_brightness(uint8_t brightness) {
     uint32_t color = colors[led_color_idx];
-    float b = brightness / (float) 255;
+    float b = SMOOTH_STEP(brightness / (float) 255);
     return pixels.Color(
             (uint8_t) ((color >> 16) * b),
             (uint8_t) ((color >> 8 & 0xFF) * b),
             (uint8_t) ((color & 0xFF) * b));
 }
 
-inline uint8_t bright(uint16_t b) {
+inline uint8_t bright(uint8_t b) {
     return (uint8_t) b;
 }
 
-inline uint8_t dim(uint16_t b) {
-    return 255 - (uint8_t) b;
+inline uint8_t dim(uint8_t b) {
+    return 100 - (uint8_t) b;
 }
 
-void set_brightness(uint8_t (*setting)(uint16_t)) {
-    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
+void set_brightness(uint8_t (*setting)(uint8_t)) {
+    for(uint8_t brightness = 0; brightness <= 100; brightness++) {
         uint32_t b = set_pixel_brightness(setting(brightness));
 
         IT.paint(b);
@@ -252,7 +251,7 @@ void set_brightness(uint8_t (*setting)(uint16_t)) {
         oclock_led.paint(b);
 
         pixels.show();
-        delayMicroseconds(COLOR_SHIFT_DELAY_US);
+        delayMicroseconds(500);
     }
 }
 
@@ -371,9 +370,9 @@ void calculate_next_leds() {
 
 void display_time() {
     bool no_led_changed = true;
-    for(uint16_t brightness = 0; brightness <= 255; brightness++) {
-        uint32_t darken = set_pixel_brightness(255 - brightness);
-        uint32_t brighten = set_pixel_brightness(brightness);
+    for(uint8_t brightness = 0; brightness <= 100; brightness++) {
+        uint32_t darken = set_pixel_brightness(dim(brightness));
+        uint32_t brighten = set_pixel_brightness(bright(brightness));
 
         if(last_second_led != seconds_led) {
             pixels.setPixelColor(last_second_led + 1, darken);
@@ -408,7 +407,7 @@ void display_time() {
             break;
 
         pixels.show();
-        delayMicroseconds(TIME_CHANGE_DELAY_US);
+        delay(1);
     }
 }
 

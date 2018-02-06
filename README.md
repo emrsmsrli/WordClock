@@ -8,5 +8,5 @@ And uses a modified version of [OneButton](https://github.com/mathertel/OneButto
 - [x] Add second support alongside of minutes and hours
 - [x] Make the leds fade-in and -out when a change in time or color happens
 - [x] Use external interrupts to count button clicks so we can increment both hour and minute with a single button
-- [ ] Implement smoothstep interpolation to led animations
+- [x] Implement smoothstep interpolation to led animations
 - [ ] Implement night mode, where overall led intensity is 0.4 instead of 1.0
