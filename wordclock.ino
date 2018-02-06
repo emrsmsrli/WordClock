@@ -1,13 +1,14 @@
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
+#include <OneButton.h>
 
 #define ZERO                    0x0     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
 
 #define ADDRESS_DS1307          0x68
 #define ADDRESS_EEPROM_COLOR    ZERO
-#define PIN_TIME_BUTTON         PIN3    // FIXME tick 2
+#define PIN_TIME_BUTTON         PIN3    // FIXME time 2
 #define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
 #define PIN_NEOPIXELS           PIN4
 
@@ -20,20 +21,19 @@
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
-struct time_s {
-    uint8_t s;
-    uint8_t m;
-    uint8_t h;
+class Time {
+public:
+    static uint8_t s;
+    static uint8_t m;
+    static uint8_t h;
 };
 
-struct time_s now;
-
-class led {
+class LedArray {
     uint8_t start;
     uint8_t end;
 
 public:
-    led(uint8_t s, uint8_t e) {
+    LedArray(uint8_t s, uint8_t e) {
         start = s;
         end = e;
     }
@@ -46,53 +46,56 @@ public:
         }
     }
 
-    bool operator==(const led& other) {
+    bool operator==(const LedArray& other) {
         return start == other.start && end == other.end;
     }
 
-    bool operator!=(const led& other) {
+    bool operator!=(const LedArray& other) {
         return start != other.start || end != other.end;
     }
 };
 
-led IT(105, 106);
-led IS(108, 109);
-led O_OCLOCK(6, 11);
-led O_PAST(61, 64);
-led O_TO(72, 73);
+OneButton TIME_BUTTON(PIN_TIME_BUTTON, true);
+OneButton COLOR_BUTTON(PIN_COLOR_BUTTON, true);
 
-led M_NONE(0, 0);
-led M_5(90, 93);
-led M_10(75, 77);
-led M_15(97, 103);
-led M_20(83, 88);
-led M_25(83, 93);
-led M_30(79, 82);
+LedArray IT(105, 106);
+LedArray IS(108, 109);
+LedArray O_OCLOCK(6, 11);
+LedArray O_PAST(61, 64);
+LedArray O_TO(72, 73);
 
-led H[] = {
-    led(58, 60),    // H_1
-    led(55, 57),    // H_2
-    led(50, 54),    // H_3
-    led(39, 42),    // H_4
-    led(43, 46),    // H_5
-    led(47, 49),    // H_6
-    led(66, 70),    // H_7
-    led(17, 21),    // H_8
-    led(35, 38),    // H_9
-    led(14, 16),    // H_10
-    led(22, 27),    // H_11
-    led(28, 33)     // H_12
+LedArray M_NONE(0, 0);
+LedArray M_5(90, 93);
+LedArray M_10(75, 77);
+LedArray M_15(97, 103);
+LedArray M_20(83, 88);
+LedArray M_25(83, 93);
+LedArray M_30(79, 82);
+
+LedArray H[] = {
+    LedArray(58, 60),    // H_1
+    LedArray(55, 57),    // H_2
+    LedArray(50, 54),    // H_3
+    LedArray(39, 42),    // H_4
+    LedArray(43, 46),    // H_5
+    LedArray(47, 49),    // H_6
+    LedArray(66, 70),    // H_7
+    LedArray(17, 21),    // H_8
+    LedArray(35, 38),    // H_9
+    LedArray(14, 16),    // H_10
+    LedArray(22, 27),    // H_11
+    LedArray(28, 33)     // H_12
 };
 
 uint8_t seconds_led = 0;
-led minute_led = M_5;
-led hour_led = H[0];
-led oclock_led = O_OCLOCK;
+LedArray minute_led = M_5;
+LedArray hour_led = H[0];
+LedArray oclock_led = O_OCLOCK;
 
 uint8_t last_second_led = seconds_led;
-led last_minute_led = minute_led;
-led last_hour_led = hour_led;
-led last_oclock_led = oclock_led;
+LedArray last_minute_led = minute_led;
+LedArray last_hour_led = hour_led;
+LedArray last_oclock_led = oclock_led;
 
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
@@ -121,9 +124,9 @@ void tick() {
     Wire.endTransmission();
 
     Wire.requestFrom(ADDRESS_DS1307, 7);
-    now.s = bcd2dec(Wire.read());
-    now.m = bcd2dec(Wire.read());
-    now.h = bcd2dec(Wire.read() & 0b111111);
+    Time::s = bcd2dec(Wire.read());
+    Time::m = bcd2dec(Wire.read());
+    Time::h = bcd2dec(Wire.read() & 0b111111);
     Wire.read();
     Wire.read();
     Wire.read();
@@ -172,19 +175,7 @@ void on_color_button_pressed() {
     set_brightness(bright);
 }
 
-void on_time_button_pressed() {
-    uint8_t h = now.h;
-    uint8_t m = now.m + 1;
-
-    if(m >= 60) {
-        h += 1;
-        m -= 60;
-    }
-
-    if(h >= 24) {
-        h -= 24;
-    }
-
+void write_time(uint8_t m, uint8_t h) {
     Wire.beginTransmission(ADDRESS_DS1307);
     Wire.write(ZERO);       // stop oscillator
 
@@ -200,6 +191,33 @@ void on_time_button_pressed() {
     Wire.endTransmission();
 }
 
+void on_time_button_pressed() {
+    uint8_t h = Time::h;
+    uint8_t m = Time::m + 1;
+
+    if(m == 60) {
+        h += 1;
+        m -= 60;
+    }
+
+    if(h == 24) {
+        h -= 24;
+    }
+
+    write_time(m, h);
+}
+
+void on_time_button_double_pressed() {
+    uint8_t h = Time::h + 1;
+    uint8_t m = Time::m;
+
+    if(h == 24) {
+        h -= 24;
+    }
+
+    write_time(m, h);
+}
+
 inline void save_last_leds() {
     last_second_led = seconds_led;
     last_minute_led = minute_led;
@@ -208,11 +226,11 @@ inline void save_last_leds() {
 }
 
 void calculate_next_leds() {
-    uint8_t hour = now.h;
-    uint8_t min = now.m;
-    uint8_t sec = now.s;
+    uint8_t hour = Time::h;
+    uint8_t min = Time::m;
+    uint8_t sec = Time::s;
 
-    seconds_led = sec % N_SECONDS_LED;
+    seconds_led = sec % N_SECONDS_LED;  // should this be 12-by-1 timer or 5-by-1?
 
     if(min < 5) {                   /// 0 - 5
         oclock_led = O_OCLOCK;
@@ -302,6 +320,13 @@ void setup() {
     pinMode(PIN_TIME_BUTTON, INPUT);
     pinMode(PIN_COLOR_BUTTON, INPUT);
 
+    COLOR_BUTTON.setClickTicks(300);
+    TIME_BUTTON.setClickTicks(300);
+
+    COLOR_BUTTON.attachClick(on_color_button_pressed);
+    TIME_BUTTON.attachClick(on_time_button_pressed);
+    TIME_BUTTON.attachDoubleClick(on_time_button_double_pressed);
+
     // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
     if(led_color_idx > (N_COLORS - 1))
@@ -321,8 +346,6 @@ void loop() {
     calculate_next_leds();
     display_time();
 
-    if(digitalRead(PIN_COLOR_BUTTON))
-        on_color_button_pressed();
-    if(digitalRead(PIN_TIME_BUTTON))
-        on_time_button_pressed();
+    COLOR_BUTTON.tick();
+    TIME_BUTTON.tick();
 }
