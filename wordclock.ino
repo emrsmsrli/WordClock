@@ -25,12 +25,13 @@
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
-class Time {
-public:
-    static uint8_t s;
-    static uint8_t m;
-    static uint8_t h;
+struct Time {
+    uint8_t s;
+    uint8_t m;
+    uint8_t h;
 };
+
+Time time;
 
 class LedArray {
     uint8_t start;
@@ -78,7 +79,7 @@ class Button {
     void(*double_click_action)();
 
 public:
-    Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = nullptr) {
+    Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = NULL) {
         pin = _pin;
         state = WAIT_PRESS;
         start_time = 0;
@@ -215,9 +216,9 @@ void tick() {
     Wire.endTransmission();
 
     Wire.requestFrom(ADDRESS_DS1307, 7);
-    Time::s = bcd2dec(Wire.read());
-    Time::m = bcd2dec(Wire.read());
-    Time::h = bcd2dec(Wire.read() & 0b111111);
+    time.s = bcd2dec(Wire.read());
+    time.m = bcd2dec(Wire.read());
+    time.h = bcd2dec(Wire.read() & 0b111111);
     Wire.read();
     Wire.read();
     Wire.read();
@@ -283,8 +284,8 @@ void write_time(uint8_t m, uint8_t h) {
 }
 
 void on_time_button_pressed() {
-    uint8_t h = Time::h;
-    uint8_t m = Time::m + 1;
+    uint8_t h = time.h;
+    uint8_t m = time.m + 1;
 
     if(m == 60) {
         h += 1;
@@ -299,14 +300,22 @@ void on_time_button_pressed() {
 }
 
 void on_time_button_double_pressed() {
-    uint8_t h = Time::h + 1;
-    uint8_t m = Time::m;
+    uint8_t h = time.h + 1;
+    uint8_t m = time.m;
 
     if(h == 24) {
         h -= 24;
     }
 
     write_time(m, h);
+}
+
+void color_isr() {
+    COLOR_BUTTON->tick();
+}
+
+void time_isr() {
+    TIME_BUTTON->tick();
 }
 
 inline void save_last_leds() {
@@ -317,9 +326,9 @@ inline void save_last_leds() {
 }
 
 void calculate_next_leds() {
-    uint8_t hour = Time::h;
-    uint8_t min = Time::m;
-    uint8_t sec = Time::s;
+    uint8_t hour = time.h;
+    uint8_t min = time.m;
+    uint8_t sec = time.s;
 
     seconds_led = sec % N_SECONDS_LED;  // should this be 12-by-1 timer or 5-by-1?
 
@@ -408,8 +417,8 @@ void display_time() {
 void setup() {
     Wire.begin();
 
-    COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, COLOR_BUTTON->tick, on_color_button_pressed);
-    TIME_BUTTON = new Button(PIN_TIME_BUTTON, TIME_BUTTON->tick, on_time_button_pressed, on_time_button_double_pressed);
+    COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed);
+    TIME_BUTTON = new Button(PIN_TIME_BUTTON, time_isr, on_time_button_pressed, on_time_button_double_pressed);
 
     // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
