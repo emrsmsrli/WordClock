@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 
-#define ZERO                    (byte)(0x00)     // workaround for issue #527
+#define ZERO                    (uint8_t)(0x00)     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
 
 #define ADDRESS_DS1307          0x68
@@ -268,7 +268,7 @@ void on_color_button_pressed() {
 
 void write_time(uint8_t m, uint8_t h) {
     Wire.beginTransmission(ADDRESS_DS1307);
-    Wire.write(ZERO);       // stop oscillator
+    Wire.write(ZERO);
 
     Wire.write(dec2Bcd(0));
     Wire.write(dec2Bcd(m));
@@ -278,7 +278,6 @@ void write_time(uint8_t m, uint8_t h) {
     Wire.write(dec2Bcd(1));
     Wire.write(dec2Bcd(0));
 
-    Wire.write(ZERO);       // start oscillator
     Wire.endTransmission();
 }
 
