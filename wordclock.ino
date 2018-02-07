@@ -2,11 +2,11 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 
-#define ZERO                    0x0     // workaround for issue #527
+#define ZERO                    (byte)(0x00)     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
 
 #define ADDRESS_DS1307          0x68
-#define ADDRESS_EEPROM_COLOR    ZERO
+#define ADDRESS_EEPROM_COLOR    0
 #define PIN_TIME_BUTTON         PIN3    // FIXME time 2
 #define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
 #define PIN_NEOPIXELS           PIN4
