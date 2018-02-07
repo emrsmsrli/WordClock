@@ -10,4 +10,3 @@ And uses a modified version of [OneButton](https://github.com/mathertel/OneButto
 - [x] Use external interrupts to count button clicks so we can increment both hour and minute with a single button
 - [x] Implement smoothstep interpolation to led animations
 - [ ] Implement night mode, where overall led intensity is 0.4 instead of 1.0
-- [ ] Implement happy birthday mode
