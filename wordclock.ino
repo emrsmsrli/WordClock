@@ -18,6 +18,7 @@
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
 
+#define MAX_BRIGHTNESS          100
 #define SMOOTH_STEP(x) ((x) * (x) * (3 - 2 * (x)))
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
@@ -236,11 +237,11 @@ inline uint8_t bright(uint8_t b) {
 }
 
 inline uint8_t dim(uint8_t b) {
-    return 100 - (uint8_t) b;
+    return MAX_BRIGHTNESS - (uint8_t) b;
 }
 
 void set_brightness(uint8_t (*setting)(uint8_t)) {
-    for(uint8_t brightness = 0; brightness <= 100; brightness++) {
+    for(uint8_t brightness = 0; brightness <= MAX_BRIGHTNESS; brightness++) {
         uint32_t b = set_pixel_brightness(setting(brightness));
 
         IT.paint(b);
@@ -370,7 +371,7 @@ void calculate_next_leds() {
 
 void display_time() {
     bool no_led_changed = true;
-    for(uint8_t brightness = 0; brightness <= 100; brightness++) {
+    for(uint8_t brightness = 0; brightness <= MAX_BRIGHTNESS; brightness++) {
         uint32_t darken = set_pixel_brightness(dim(brightness));
         uint32_t brighten = set_pixel_brightness(bright(brightness));
 
