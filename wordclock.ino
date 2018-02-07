@@ -92,6 +92,7 @@ public:
 
     void perform_clicks() {
         noInterrupts();
+        update();
         if(single_clicked) {
             single_clicked = false;
             interrupts();
