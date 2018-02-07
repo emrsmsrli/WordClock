@@ -18,7 +18,7 @@
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
 
-#define MAX_BRIGHTNESS          100
+#define ANIMATION_TIME_MS       200
 #define SMOOTH_STEP(x) ((x) * (x) * (3 - 2 * (x)))
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
@@ -224,9 +224,9 @@ void tick() {
     Wire.read();
 }
 
-uint32_t set_pixel_brightness(uint8_t brightness) {
+uint32_t set_pixel_intensity(uint8_t intesity) {
     uint32_t color = colors[led_color_idx];
-    float b = SMOOTH_STEP(brightness / (float) MAX_BRIGHTNESS);
+    float b = SMOOTH_STEP(intesity / (float) ANIMATION_TIME_MS);
     return pixels.Color(
             (uint8_t) ((color >> 16) * b),
             (uint8_t) ((color >> 8 & 0xFF) * b),
@@ -238,12 +238,12 @@ inline uint8_t bright(uint8_t b) {
 }
 
 inline uint8_t dim(uint8_t b) {
-    return MAX_BRIGHTNESS - (uint8_t) b;
+    return ANIMATION_TIME_MS - (uint8_t) b;
 }
 
 void set_brightness(uint8_t (*setting)(uint8_t)) {
-    for(uint8_t brightness = 0; brightness <= MAX_BRIGHTNESS; brightness++) {
-        uint32_t b = set_pixel_brightness(setting(brightness));
+    for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++) {
+        uint32_t b = set_pixel_intensity(setting(i));
 
         IT.paint(b);
         IS.paint(b);
@@ -372,9 +372,9 @@ void calculate_next_leds() {
 
 void display_time() {
     bool no_led_changed = true;
-    for(uint8_t brightness = 0; brightness <= MAX_BRIGHTNESS; brightness++) {
-        uint32_t darken = set_pixel_brightness(dim(brightness));
-        uint32_t brighten = set_pixel_brightness(bright(brightness));
+    for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++) {
+        uint32_t darken = set_pixel_intensity(dim(i));
+        uint32_t brighten = set_pixel_intensity(bright(i));
 
         if(last_second_led != seconds_led) {
             pixels.setPixelColor(last_second_led + 1, darken);
@@ -409,7 +409,7 @@ void display_time() {
             break;
 
         pixels.show();
-        delay(1);
+        delayMicroseconds(1000);
     }
 }
 
