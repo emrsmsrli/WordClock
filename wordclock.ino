@@ -226,7 +226,7 @@ void tick() {
 
 uint32_t set_pixel_brightness(uint8_t brightness) {
     uint32_t color = colors[led_color_idx];
-    float b = SMOOTH_STEP(brightness / (float) 255);
+    float b = SMOOTH_STEP(brightness / (float) MAX_BRIGHTNESS);
     return pixels.Color(
             (uint8_t) ((color >> 16) * b),
             (uint8_t) ((color >> 8 & 0xFF) * b),
