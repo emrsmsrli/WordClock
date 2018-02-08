@@ -27,6 +27,9 @@ struct Time {
     uint8_t s;
     uint8_t m;
     uint8_t h;
+    uint8_t dd;
+    uint8_t mm;
+    uint8_t yy;
 };
 
 Time time;
@@ -215,13 +218,13 @@ void tick() {
     Wire.endTransmission();
 
     Wire.requestFrom(ADDRESS_DS1307, 7);
-    time.s = bcd2dec(Wire.read());
+    time.s = bcd2dec(Wire.read() & 0x7F);
     time.m = bcd2dec(Wire.read());
-    time.h = bcd2dec(Wire.read() & 0b111111);
+    time.h = bcd2dec(Wire.read() & 0x3F);
     Wire.read();
-    Wire.read();
-    Wire.read();
-    Wire.read();
+    time.dd = bcd2dec(Wire.read());
+    time.mm = bcd2dec(Wire.read());
+    time.yy = bcd2dec(Wire.read());
 }
 
 uint32_t set_pixel_intensity(uint8_t intesity) {
@@ -274,9 +277,9 @@ void write_time(uint8_t m, uint8_t h) {
     Wire.write(dec2Bcd(m));
     Wire.write(dec2Bcd(h));
     Wire.write(dec2Bcd(1));
-    Wire.write(dec2Bcd(1));
-    Wire.write(dec2Bcd(1));
-    Wire.write(dec2Bcd(0));
+    Wire.write(dec2Bcd(time.dd));
+    Wire.write(dec2Bcd(time.mm));
+    Wire.write(dec2Bcd(time.yy));
 
     Wire.endTransmission();
 }
@@ -286,12 +289,10 @@ void on_time_button_pressed() {
     uint8_t m = time.m + 1;
 
     if(m == 60) {
-        h += 1;
-        m -= 60;
-    }
-
-    if(h == 24) {
-        h -= 24;
+        m = 0;
+        if(++h == 24) {
+            h = 0;
+        }
     }
 
     write_time(m, h);
@@ -302,7 +303,7 @@ void on_time_button_double_pressed() {
     uint8_t m = time.m;
 
     if(h == 24) {
-        h -= 24;
+        h = 0;
     }
 
     write_time(m, h);
