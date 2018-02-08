@@ -204,6 +204,8 @@ uint32_t colors[] = {
     pixels.Color(255, 0,   0)       // red
 };
 
+uint8_t heart[] = {11, 21, 23, 31, 35, 41, 47, 51, 59, 61, 71, 72, 77, 82, 84, 87, 89, 92};
+
 int dec2Bcd(uint8_t val) {
     return (val / 10 * 16) + (val % 10);
 }
@@ -227,8 +229,7 @@ void tick() {
     time.yy = bcd2dec(Wire.read());
 }
 
-uint32_t set_pixel_intensity(uint8_t intesity) {
-    uint32_t color = colors[led_color_idx];
+uint32_t set_pixel_intensity(uint32_t color, uint8_t intesity) {
     float b = SMOOTH_STEP(intesity / (float) ANIMATION_TIME_MS);
     return pixels.Color(
             (uint8_t) ((color >> 16) * b),
@@ -245,8 +246,9 @@ inline uint8_t dim(uint8_t b) {
 }
 
 void set_brightness(uint8_t (*setting)(uint8_t)) {
+    uint32_t color = colors[led_color_idx];
     for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++) {
-        uint32_t b = set_pixel_intensity(setting(i));
+        uint32_t b = set_pixel_intensity(color, setting(i));
 
         IT.paint(b);
         IS.paint(b);
@@ -309,14 +311,6 @@ void on_time_button_double_pressed() {
     write_time(m, h);
 }
 
-void color_isr() {
-    COLOR_BUTTON->update();
-}
-
-void time_isr() {
-    TIME_BUTTON->update();
-}
-
 inline void save_last_leds() {
     last_second_led = seconds_led;
     last_minute_led = minute_led;
@@ -372,9 +366,10 @@ void calculate_next_leds() {
 
 void display_time() {
     bool no_led_changed = true;
+    uint32_t color = colors[led_color_idx];
     for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++) {
-        uint32_t darken = set_pixel_intensity(dim(i));
-        uint32_t brighten = set_pixel_intensity(bright(i));
+        uint32_t darken = set_pixel_intensity(color, dim(i));
+        uint32_t brighten = set_pixel_intensity(color, bright(i));
 
         if(last_second_led != seconds_led) {
             pixels.setPixelColor(last_second_led + 1, darken);
@@ -413,6 +408,73 @@ void display_time() {
     }
 }
 
+class Birthday {
+    static void lit_heart(uint8_t (*setting)(uint8_t), uint16_t d) {
+        uint32_t color = pixels.Color(255, 0, 0);
+        for(uint8_t b = 0; b <= ANIMATION_TIME_MS; b++) {
+            uint32_t ints = set_pixel_intensity(color, setting(b));
+            for(uint8_t h_l = 0; h_l < 18; ++h_l)
+                pixels.setPixelColor(heart[h_l], ints);
+            pixels.show();
+            delayMicroseconds(1000);
+        }
+        delay(d);
+    }
+
+    static bool cancel() {
+        if(cancelled) {
+            begun = false;
+            cancelled = false;
+            return true;
+        }
+        return false;
+    }
+
+public:
+    static bool begun;
+    static volatile bool cancelled;
+
+    static void begin() {
+        begun = false;
+        cancelled = false;
+    }
+
+    static bool is_today() {
+        return time.dd == 4 && time.mm == 11
+               && time.h == 17 && time.m == 0 && time.s == 0;
+    }
+
+    static void celebrate() {
+        begun = true;
+        set_brightness(dim);
+        for(uint8_t i = 0; i < 240; ++i) {
+            if(cancel()) break;
+            lit_heart(bright, 500);
+            if(cancel()) {
+                lit_heart(dim, 0);
+                break;
+            }
+            lit_heart(dim, 1000);
+        }
+        set_brightness(bright);
+        begun = false;
+    }
+};
+
+bool Birthday::begun;
+volatile bool Birthday::cancelled;
+
+void color_isr() {
+    COLOR_BUTTON->update();
+}
+
+void time_isr() {
+    if(Birthday::begun)
+        Birthday::cancelled = true;
+    else
+        TIME_BUTTON->update();
+}
+
 void setup() {
     Wire.begin();
 
@@ -427,6 +489,8 @@ void setup() {
     pixels.begin();
     pixels.clear();
 
+    Birthday::begin();
+
     tick();
     calculate_next_leds();
     set_brightness(bright);
@@ -434,6 +498,10 @@ void setup() {
 
 void loop() {
     tick();
+
+    if(Birthday::is_today())
+        Birthday::celebrate();
+
     save_last_leds();
     calculate_next_leds();
     display_time();
