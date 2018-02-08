@@ -441,7 +441,8 @@ public:
 
     static bool is_today() {
         return time.dd == 4 && time.mm == 11
-               && time.h == 17 && time.m == 0 && time.s == 0;
+               && (time.h == 8 || time.h == 17)
+               && time.m == 0 && time.s == 0;
     }
 
     static void celebrate() {
