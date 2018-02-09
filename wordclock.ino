@@ -439,7 +439,7 @@ public:
         cancelled = false;
     }
 
-    static bool is_today() {
+    static bool is_today() {                    // TODO implement buzzer happy birthday
         return time.dd == 4 && time.mm == 11
                && (time.h == 8 || time.h == 17)
                && time.m == 0 && time.s == 0;
@@ -500,8 +500,13 @@ void setup() {
 void loop() {
     tick();
 
-    if(Birthday::is_today())
+    if(Birthday::is_today()) {
         Birthday::celebrate();
+        tick();
+        calculate_next_leds();
+        set_brightness(bright);
+        return;
+    }
 
     save_last_leds();
     calculate_next_leds();
