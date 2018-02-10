@@ -434,11 +434,6 @@ public:
     static bool begun;
     static volatile bool cancelled;
 
-    static void begin() {
-        begun = false;
-        cancelled = false;
-    }
-
     static bool is_today() {                    // TODO implement buzzer happy birthday
         return time.dd == 4 && time.mm == 11
                && (time.h == 8 || time.h == 17)
@@ -462,8 +457,8 @@ public:
     }
 };
 
-bool Birthday::begun;
-volatile bool Birthday::cancelled;
+bool Birthday::begun = false;
+volatile bool Birthday::cancelled = false;
 
 void color_isr() {
     COLOR_BUTTON->update();
@@ -489,8 +484,6 @@ void setup() {
 
     pixels.begin();
     pixels.clear();
-
-    Birthday::begin();
 
     tick();
     calculate_next_leds();
