@@ -220,11 +220,11 @@ uint32_t set_pixel_intensity(uint32_t color, uint8_t intesity) {
 }
 
 inline uint8_t bright(uint8_t b) {
-    return (uint8_t) b;
+    return b;
 }
 
 inline uint8_t dim(uint8_t b) {
-    return ANIMATION_TIME_MS - (uint8_t) b;
+    return ANIMATION_TIME_MS - b;
 }
 
 void set_brightness(uint8_t (*setting)(uint8_t)) {
