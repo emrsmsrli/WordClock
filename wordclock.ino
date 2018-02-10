@@ -468,6 +468,12 @@ public:
     static bool begun;
     static volatile bool cancelled;
 
+    static void begin() {
+        begun = false;
+        cancelled = false;
+        pinMode(PIN_SPEAKER, OUTPUT);
+    }
+
     static bool is_today() {
         return time.dd == 4 && time.mm == 11
                && (time.h == 8 || time.h == 12 || time.h == 17)
@@ -490,8 +496,8 @@ public:
     }
 };
 
-bool Birthday::begun = false;
-volatile bool Birthday::cancelled = false;
+bool Birthday::begun;
+volatile bool Birthday::cancelled;
 
 void color_isr() {
     COLOR_BUTTON->update();
@@ -506,7 +512,6 @@ void time_isr() {
 
 void setup() {
     Wire.begin();
-    pinMode(PIN_SPEAKER, OUTPUT);
 
     COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed);
     TIME_BUTTON = new Button(PIN_TIME_BUTTON, time_isr, on_time_button_pressed, on_time_button_double_pressed);
@@ -518,6 +523,8 @@ void setup() {
 
     pixels.begin();
     pixels.clear();
+
+    Birthday::begin();
 
     tick();
     calculate_next_leds();
