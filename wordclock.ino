@@ -240,7 +240,7 @@ void set_brightness(uint8_t (*setting)(uint8_t)) {
         oclock_led.paint(b);
 
         pixels.show();
-        delayMicroseconds(500);
+        delayMicroseconds(1000);
     }
 }
 
