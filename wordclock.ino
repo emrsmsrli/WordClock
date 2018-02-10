@@ -465,7 +465,7 @@ void color_isr() {
 }
 
 void time_isr() {
-    if(Birthday::begun)
+    if(Birthday::begun && !Birthday::cancelled)
         Birthday::cancelled = true;
     else
         TIME_BUTTON->update();
