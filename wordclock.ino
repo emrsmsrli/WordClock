@@ -1,26 +1,7 @@
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
-
-#define ZERO                    (uint8_t)(0x00)     // workaround for issue #527
-#define UNUSED_LED_FOR_25       89
-
-#define ADDRESS_DS1307          0x68
-#define ADDRESS_EEPROM_COLOR    0
-#define PIN_TIME_BUTTON         PIN3    // FIXME time 2
-#define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
-#define PIN_NEOPIXELS           PIN4
-#define PIN_SPEAKER             9
-
-#define N_PIXELS                116
-#define N_COLORS                7
-#define N_SECONDS_LED           5
-
-#define BTN_DEBOUNCE_THRESHOLD  50
-#define BTN_CLICK_THRESHOLD     300
-
-#define ANIMATION_TIME_MS       200
-#define SMOOTH_STEP(x) ((x) * (x) * (3 - 2 * (x)))
+#include "include/consts.h"
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
@@ -410,7 +391,7 @@ void display_time() {
 }
 
 class Birthday {
-    static void lit_heart(uint8_t (*setting)(uint8_t), uint16_t d) {
+    static void set_brightness_heart(uint8_t (*setting)(uint8_t), uint16_t d) {
         uint32_t color = pixels.Color(255, 0, 0);
         for(uint8_t b = 0; b <= ANIMATION_TIME_MS; b++) {
             uint32_t ints = set_pixel_intensity(color, setting(b));
@@ -422,7 +403,7 @@ class Birthday {
         delay(d);
     }
 
-    static void play_tone(uint16_t tone, uint16_t duration) {
+    static void play_note(uint16_t tone, uint16_t duration) {
         for(long i = 0; i < duration * 1000L; i += tone * 2) {
             digitalWrite(PIN_SPEAKER, HIGH);
             delayMicroseconds(tone);
@@ -432,26 +413,18 @@ class Birthday {
         }
     }
 
-    static void play_note(char note, uint16_t duration) {
-        char names[] = {'C', 'D', 'E', 'F', 'G', 'A', 'B', 'c',
-                        'd', 'e', 'f', 'g', 'a', 'b', 'x', 'y' };
-        uint16_t tones[] = {1915, 1700, 1519, 1432, 1275, 1136, 1014, 956,
-                            834,  765,  593,  468,  346,  224, 655 , 715};
-        uint16_t dur = duration / 5;
-        for (uint8_t i = 0; i < 17; i++)
-            if (names[i] == note)
-                play_tone(tones[i], dur);
-    }
-
     static void play_happy_birthday() {
-        uint8_t tempo = 150;
-        char notes[] = "GGAGcB GGAGdc GGxecBA yyecdc";
+        uint16_t notes[] = {NOTE_G, NOTE_G, NOTE_A, NOTE_G, NOTE_c, NOTE_B, NOTE_REST,
+                            NOTE_G, NOTE_G, NOTE_A, NOTE_G, NOTE_d, NOTE_c, NOTE_REST,
+                            NOTE_G, NOTE_G, NOTE_x, NOTE_e, NOTE_c, NOTE_B, NOTE_A, NOTE_REST,
+                            NOTE_y, NOTE_y, NOTE_e, NOTE_c, NOTE_d, NOTE_c};
         uint16_t beats[] = {2, 2, 8, 8, 8, 16, 1, 2, 2, 8, 8, 8, 16, 1,
                             2, 2, 8, 8, 8 ,8, 16, 1, 2, 2, 8, 8, 8, 16};
+        uint16_t spee_mult = SONG_TEMPO / SPEE;
         for (int i = 0; i < 28; i++) {
-            if (notes[i] == ' ')    delay(beats[i] * tempo);    // rest
-            else                    play_note(notes[i], beats[i] * tempo);
-            delay(tempo);
+            if (!notes[i])  delay(beats[i] * SONG_TEMPO);
+            else play_note(notes[i], beats[i] * spee_mult);
+            delay(SONG_TEMPO);
         }
     }
 
@@ -483,12 +456,12 @@ public:
     static void celebrate() {
         begun = true;
         set_brightness(dim);
-        lit_heart(bright, 500);
+        set_brightness_heart(bright, 500);
         play_happy_birthday();
         for(uint16_t i = 0; i < 10800; ++i) {
             delay(1000);
             if(cancel()) {
-                lit_heart(dim, 0);
+                set_brightness_heart(dim, 0);
                 break;
             }
         }
