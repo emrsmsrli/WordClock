@@ -305,7 +305,7 @@ void calculate_next_leds() {
     uint8_t min = time.m;
     uint8_t sec = time.s;
 
-    seconds_led = sec % N_SECONDS_LED;  // should this be 12-by-1 timer or 5-by-1?
+    seconds_led = sec % N_SECONDS_LED;
 
     if(min < 5) {                   /// 0 - 5
         oclock_led = O_OCLOCK;
