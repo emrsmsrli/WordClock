@@ -2,6 +2,8 @@
 #ifndef WORDCLOCK_CONSTS_H
 #define WORDCLOCK_CONSTS_H
 
+#include "Arduino.h"
+
 #define ZERO                    (uint8_t)(0x00)     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
 
@@ -16,11 +18,14 @@
 #define N_COLORS                7
 #define N_SECONDS_LED           5
 
+#define COLOR_BLACK             (uint32_t) 0x000000
+#define COLOR_RED               (uint32_t) 0xFF0000
+
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
 
 #define ANIMATION_TIME_MS       200
-#define ANIMATE                 for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++)
+#define ANIMATE(duration)       for(uint8_t i = 0; i <= (duration); i++)
 #define SMOOTH_STEP(x)          ((x) * (x) * (3 - 2 * (x)))
 
 #define NOTE_G                  1275
@@ -35,5 +40,11 @@
 
 #define SONG_TEMPO              175
 #define SPEE                    5
+
+typedef struct {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} color;
 
 #endif //WORDCLOCK_CONSTS_H

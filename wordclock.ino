@@ -194,6 +194,43 @@ uint8_t bcd2dec(int val) {
     return (uint8_t) (val / 16 * 10) + (val % 16);
 }
 
+uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
+    float v = SMOOTH_STEP(i / (float) N);
+    return (uint8_t) ((min * v) + (max * (1 - v)));
+}
+
+color extract_color(uint32_t c) {
+    color clr;
+    clr.r = c >> 16;
+    clr.g = c >> 8 & 0xFF;
+    clr.b = c & 0xFF;
+    return clr;
+}
+
+uint32_t shift_color(uint32_t oldC, uint32_t newC, uint8_t i, uint8_t N) {
+    color c_old = extract_color(oldC);
+    color c_new = extract_color(newC);
+    return pixels.Color(smooth_step(i, N, c_old.r, c_new.r),
+                        smooth_step(i, N, c_old.g, c_new.g),
+                        smooth_step(i, N, c_old.b, c_new.b));
+}
+
+void shift_color_all(uint32_t oldC, uint32_t newC) {
+    ANIMATE(ANIMATION_TIME_MS) {
+        uint32_t b = shift_color(oldC, newC, i, ANIMATION_TIME_MS);
+
+        IT.paint(b);
+        IS.paint(b);
+        pixels.setPixelColor(seconds_led, b);
+        minute_led.paint(b);
+        hour_led.paint(b);
+        oclock_led.paint(b);
+
+        pixels.show();
+        delayMicroseconds(1000);
+    }
+}
+
 void tick() {
     Wire.beginTransmission(ADDRESS_DS1307);
     Wire.write(ZERO);
@@ -209,46 +246,13 @@ void tick() {
     time.yy = bcd2dec(Wire.read());
 }
 
-uint32_t set_pixel_intensity(uint32_t color, uint8_t intesity) {
-    float b = SMOOTH_STEP(intesity / (float) ANIMATION_TIME_MS);
-    return pixels.Color(
-            (uint8_t) ((color >> 16) * b),
-            (uint8_t) ((color >> 8 & 0xFF) * b),
-            (uint8_t) ((color & 0xFF) * b));
-}
-
-inline uint8_t bright(uint8_t b) {
-    return b;
-}
-
-inline uint8_t dim(uint8_t b) {
-    return ANIMATION_TIME_MS - b;
-}
-
-void set_brightness(uint8_t (*setting)(uint8_t)) {
-    uint32_t color = colors[led_color_idx];
-    ANIMATE {
-        uint32_t b = set_pixel_intensity(color, setting(i));
-
-        IT.paint(b);
-        IS.paint(b);
-        pixels.setPixelColor(seconds_led, b);
-        minute_led.paint(b);
-        hour_led.paint(b);
-        oclock_led.paint(b);
-
-        pixels.show();
-        delayMicroseconds(1000);
-    }
-}
-
 void on_color_button_pressed() {
-    set_brightness(dim);
+    uint8_t old_led_color_idx = led_color_idx;
 
     led_color_idx = (led_color_idx + 1) % N_COLORS;
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
 
-    set_brightness(bright);
+    shift_color_all(colors[old_led_color_idx], colors[led_color_idx]);
 }
 
 void write_time(uint8_t m, uint8_t h) {
@@ -347,36 +351,36 @@ void calculate_next_leds() {
 void display_time() {
     bool no_led_changed = true;
     uint32_t color = colors[led_color_idx];
-    ANIMATE {
-        uint32_t darken = set_pixel_intensity(color, dim(i));
-        uint32_t brighten = set_pixel_intensity(color, bright(i));
+    ANIMATE(ANIMATION_TIME_MS) {
+        uint32_t to_black = shift_color(color, COLOR_BLACK, i, ANIMATION_TIME_MS);
+        uint32_t to_color = shift_color(COLOR_BLACK, color, i, ANIMATION_TIME_MS);
 
         if(last_second_led != seconds_led) {
-            pixels.setPixelColor(last_second_led, darken);
-            pixels.setPixelColor(seconds_led, brighten);
+            pixels.setPixelColor(last_second_led, to_black);
+            pixels.setPixelColor(seconds_led, to_color);
             no_led_changed = false;
         }
         if(last_minute_led != minute_led) {
             if(last_minute_led == M_20 && minute_led == M_25) {
-                M_5.paint(brighten);
+                M_5.paint(to_color);
             } else if(last_minute_led == M_25 && minute_led == M_20) {
-                M_5.paint(darken);
+                M_5.paint(to_black);
             } else {
                 if(last_minute_led != M_NONE)
-                    last_minute_led.paint(darken);
+                    last_minute_led.paint(to_black);
                 if(minute_led != M_NONE)
-                    minute_led.paint(brighten);
+                    minute_led.paint(to_color);
             }
             no_led_changed = false;
         }
         if(last_hour_led != hour_led) {
-            last_hour_led.paint(darken);
-            hour_led.paint(brighten);
+            last_hour_led.paint(to_black);
+            hour_led.paint(to_color);
             no_led_changed = false;
         }
         if(last_oclock_led != oclock_led) {
-            last_oclock_led.paint(darken);
-            oclock_led.paint(brighten);
+            last_oclock_led.paint(to_black);
+            oclock_led.paint(to_color);
             no_led_changed = false;
         }
 
@@ -389,12 +393,11 @@ void display_time() {
 }
 
 class Birthday {
-    static void set_brightness_heart(uint8_t (*setting)(uint8_t), uint16_t d) {
-        uint32_t color = pixels.Color(255, 0, 0);
-        ANIMATE {
-            uint32_t ints = set_pixel_intensity(color, setting(i));
+    static void shift_color_heart(uint32_t oldC, uint32_t newC, uint16_t d) {
+        ANIMATE(ANIMATION_TIME_MS) {
+            uint32_t shift = shift_color(oldC, newC, i, ANIMATION_TIME_MS);
             for(uint8_t h_l = 0; h_l < 18; ++h_l)
-                pixels.setPixelColor(heart[h_l], ints);
+                pixels.setPixelColor(heart[h_l], shift);
             pixels.show();
             delayMicroseconds(1000);
         }
@@ -452,13 +455,13 @@ public:
 
     static void celebrate() {
         begun = true;
-        set_brightness(dim);
-        set_brightness_heart(bright, 500);
+        shift_color_all(colors[led_color_idx], COLOR_BLACK);
+        shift_color_heart(COLOR_BLACK, COLOR_RED, 500);
         play_happy_birthday();
         for(uint16_t i = 0; i < 10800; ++i) {
             delay(1000);
             if(cancel()) {
-                set_brightness_heart(dim, 0);
+                shift_color_heart(COLOR_RED, COLOR_BLACK, 0);
                 break;
             }
         }
@@ -498,7 +501,7 @@ void setup() {
 
     tick();
     calculate_next_leds();
-    set_brightness(bright);
+    shift_color_all(COLOR_BLACK, colors[led_color_idx]);
 }
 
 void loop() {
@@ -508,7 +511,7 @@ void loop() {
         Birthday::celebrate();
         tick();
         calculate_next_leds();
-        set_brightness(bright);
+        shift_color_all(COLOR_BLACK, colors[led_color_idx]);
         return;
     }
 
