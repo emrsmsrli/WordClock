@@ -5,16 +5,14 @@
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
-struct Time {
+struct {
     uint8_t s;
     uint8_t m;
     uint8_t h;
     uint8_t dd;
     uint8_t mm;
     uint8_t yy;
-};
-
-Time time;
+} time;
 
 class LedArray {
     uint8_t start;
