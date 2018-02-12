@@ -210,17 +210,17 @@ color extract_color(uint32_t c) {
     return clr;
 }
 
-uint32_t shift_color(uint32_t oldC, uint32_t newC, uint8_t i, uint8_t N) {
-    color c_old = extract_color(oldC);
-    color c_new = extract_color(newC);
+uint32_t shift_color(uint8_t i, uint8_t N, uint32_t old_color, uint32_t new_color) {
+    color c_old = extract_color(old_color);
+    color c_new = extract_color(new_color);
     return pixels.Color(smooth_step(i, N, c_old.r, c_new.r),
                         smooth_step(i, N, c_old.g, c_new.g),
                         smooth_step(i, N, c_old.b, c_new.b));
 }
 
-void shift_color_all(uint32_t oldC, uint32_t newC) {
+void shift_color_all(uint32_t old_color, uint32_t new_color) {
     ANIMATE(i, ANIMATION_TIME_MS) {
-        uint32_t b = shift_color(oldC, newC, i, ANIMATION_TIME_MS);
+        uint32_t b = shift_color(i, ANIMATION_TIME_MS, old_color, new_color);
 
         IT.paint(b);
         IS.paint(b);
@@ -355,8 +355,8 @@ void display_time() {
     bool no_led_changed = true;
     uint32_t color = current_color();
     ANIMATE(i, ANIMATION_TIME_MS) {
-        uint32_t to_black = shift_color(color, COLOR_BLACK, i, ANIMATION_TIME_MS);
-        uint32_t to_color = shift_color(COLOR_BLACK, color, i, ANIMATION_TIME_MS);
+        uint32_t to_black = shift_color(i, ANIMATION_TIME_MS, color, COLOR_BLACK);
+        uint32_t to_color = shift_color(i, ANIMATION_TIME_MS, COLOR_BLACK, color);
 
         if(last_second_led != seconds_led) {
             pixels.setPixelColor(last_second_led, to_black);
@@ -398,7 +398,7 @@ void display_time() {
 class Birthday {
     static void shift_color_heart(uint32_t oldC, uint32_t newC, uint16_t d) {
         ANIMATE(i, ANIMATION_TIME_MS) {
-            uint32_t shift = shift_color(oldC, newC, i, ANIMATION_TIME_MS);
+            uint32_t shift = shift_color(i, ANIMATION_TIME_MS, oldC, newC);
             for(uint8_t h_l = 0; h_l < 18; ++h_l)
                 pixels.setPixelColor(heart[h_l], shift);
             pixels.show();
