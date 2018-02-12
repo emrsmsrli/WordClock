@@ -229,7 +229,7 @@ inline uint8_t dim(uint8_t b) {
 
 void set_brightness(uint8_t (*setting)(uint8_t)) {
     uint32_t color = colors[led_color_idx];
-    for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++) {
+    ANIMATE {
         uint32_t b = set_pixel_intensity(color, setting(i));
 
         IT.paint(b);
@@ -349,7 +349,7 @@ void calculate_next_leds() {
 void display_time() {
     bool no_led_changed = true;
     uint32_t color = colors[led_color_idx];
-    for(uint8_t i = 0; i <= ANIMATION_TIME_MS; i++) {
+    ANIMATE {
         uint32_t darken = set_pixel_intensity(color, dim(i));
         uint32_t brighten = set_pixel_intensity(color, bright(i));
 
@@ -393,8 +393,8 @@ void display_time() {
 class Birthday {
     static void set_brightness_heart(uint8_t (*setting)(uint8_t), uint16_t d) {
         uint32_t color = pixels.Color(255, 0, 0);
-        for(uint8_t b = 0; b <= ANIMATION_TIME_MS; b++) {
-            uint32_t ints = set_pixel_intensity(color, setting(b));
+        ANIMATE {
+            uint32_t ints = set_pixel_intensity(color, setting(i));
             for(uint8_t h_l = 0; h_l < 18; ++h_l)
                 pixels.setPixelColor(heart[h_l], ints);
             pixels.show();
@@ -409,7 +409,6 @@ class Birthday {
             delayMicroseconds(tone);
             digitalWrite(PIN_SPEAKER, LOW);
             delayMicroseconds(tone);
-
         }
     }
 
