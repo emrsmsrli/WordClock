@@ -189,12 +189,12 @@ uint32_t current_color() {
     return colors[led_color_idx];
 }
 
-int dec2Bcd(uint8_t val) {
-    return (val / 10 * 16) + (val % 10);
+int dec2bcd(uint8_t val) {
+    return val / 10 * 16 + val % 10;
 }
 
 uint8_t bcd2dec(int val) {
-    return (uint8_t) (val / 16 * 10) + (val % 16);
+    return (uint8_t) (val / 16 * 10 + val % 16);
 }
 
 uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
@@ -262,13 +262,13 @@ void write_time(uint8_t m, uint8_t h) {
     Wire.beginTransmission(ADDRESS_DS1307);
     Wire.write(ZERO);
 
-    Wire.write(dec2Bcd(0));
-    Wire.write(dec2Bcd(m));
-    Wire.write(dec2Bcd(h));
-    Wire.write(dec2Bcd(1));
-    Wire.write(dec2Bcd(time.dd));
-    Wire.write(dec2Bcd(time.mm));
-    Wire.write(dec2Bcd(time.yy));
+    Wire.write(dec2bcd(0));
+    Wire.write(dec2bcd(m));
+    Wire.write(dec2bcd(h));
+    Wire.write(dec2bcd(1));
+    Wire.write(dec2bcd(time.dd));
+    Wire.write(dec2bcd(time.mm));
+    Wire.write(dec2bcd(time.yy));
 
     Wire.endTransmission();
 }
