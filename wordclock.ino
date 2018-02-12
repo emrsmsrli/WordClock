@@ -232,7 +232,7 @@ void set_brightness(uint8_t (*setting)(uint8_t)) {
 
         IT.paint(b);
         IS.paint(b);
-        pixels.setPixelColor(seconds_led + 1, b);
+        pixels.setPixelColor(seconds_led, b);
         minute_led.paint(b);
         hour_led.paint(b);
         oclock_led.paint(b);
@@ -303,7 +303,7 @@ void calculate_next_leds() {
     uint8_t min = time.m;
     uint8_t sec = time.s;
 
-    seconds_led = sec % N_SECONDS_LED;
+    seconds_led = sec % N_SECONDS_LED + 1;
 
     if(min < 5) {                   /// 0 - 5
         oclock_led = O_OCLOCK;
@@ -352,8 +352,8 @@ void display_time() {
         uint32_t brighten = set_pixel_intensity(color, bright(i));
 
         if(last_second_led != seconds_led) {
-            pixels.setPixelColor(last_second_led + 1, darken);
-            pixels.setPixelColor(seconds_led + 1, brighten);
+            pixels.setPixelColor(last_second_led, darken);
+            pixels.setPixelColor(seconds_led, brighten);
             no_led_changed = false;
         }
         if(last_minute_led != minute_led) {
