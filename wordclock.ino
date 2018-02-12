@@ -219,7 +219,7 @@ uint32_t shift_color(uint32_t oldC, uint32_t newC, uint8_t i, uint8_t N) {
 }
 
 void shift_color_all(uint32_t oldC, uint32_t newC) {
-    ANIMATE(ANIMATION_TIME_MS) {
+    ANIMATE(i, ANIMATION_TIME_MS) {
         uint32_t b = shift_color(oldC, newC, i, ANIMATION_TIME_MS);
 
         IT.paint(b);
@@ -354,7 +354,7 @@ void calculate_next_leds() {
 void display_time() {
     bool no_led_changed = true;
     uint32_t color = current_color();
-    ANIMATE(ANIMATION_TIME_MS) {
+    ANIMATE(i, ANIMATION_TIME_MS) {
         uint32_t to_black = shift_color(color, COLOR_BLACK, i, ANIMATION_TIME_MS);
         uint32_t to_color = shift_color(COLOR_BLACK, color, i, ANIMATION_TIME_MS);
 
@@ -397,7 +397,7 @@ void display_time() {
 
 class Birthday {
     static void shift_color_heart(uint32_t oldC, uint32_t newC, uint16_t d) {
-        ANIMATE(ANIMATION_TIME_MS) {
+        ANIMATE(i, ANIMATION_TIME_MS) {
             uint32_t shift = shift_color(oldC, newC, i, ANIMATION_TIME_MS);
             for(uint8_t h_l = 0; h_l < 18; ++h_l)
                 pixels.setPixelColor(heart[h_l], shift);

@@ -25,7 +25,7 @@
 #define BTN_CLICK_THRESHOLD     300
 
 #define ANIMATION_TIME_MS       200
-#define ANIMATE(duration)       for(uint8_t i = 0; i <= (duration); i++)
+#define ANIMATE(i, duration)    for(uint8_t (i) = 0; (i) <= (duration); (i)++)
 #define SMOOTH_STEP(x)          ((x) * (x) * (3 - 2 * (x)))
 
 #define NOTE_G                  1275
