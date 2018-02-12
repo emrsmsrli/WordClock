@@ -174,8 +174,7 @@ LedArray last_oclock_led = oclock_led;
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
     pixels.Color(247, 139, 15),     // orange
-    // pixels.Color(71,  5,   20),     // claret
-
+    // pixels.Color(71,  5,   20),     // claret dont forget to increment N_COLORS
     pixels.Color(127, 127, 0),      // yellow
     pixels.Color(127, 0,   127),    // magenta
     pixels.Color(0,   127, 127),    // cyan
@@ -185,6 +184,10 @@ uint32_t colors[] = {
 };
 
 uint8_t heart[] = {11, 21, 23, 31, 35, 41, 47, 51, 59, 61, 71, 72, 77, 82, 84, 87, 89, 92};
+
+uint32_t current_color() {
+    return colors[led_color_idx];
+}
 
 int dec2Bcd(uint8_t val) {
     return (val / 10 * 16) + (val % 10);
@@ -252,7 +255,7 @@ void on_color_button_pressed() {
     led_color_idx = (led_color_idx + 1) % N_COLORS;
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
 
-    shift_color_all(colors[old_led_color_idx], colors[led_color_idx]);
+    shift_color_all(colors[old_led_color_idx], current_color());
 }
 
 void write_time(uint8_t m, uint8_t h) {
@@ -350,7 +353,7 @@ void calculate_next_leds() {
 
 void display_time() {
     bool no_led_changed = true;
-    uint32_t color = colors[led_color_idx];
+    uint32_t color = current_color();
     ANIMATE(ANIMATION_TIME_MS) {
         uint32_t to_black = shift_color(color, COLOR_BLACK, i, ANIMATION_TIME_MS);
         uint32_t to_color = shift_color(COLOR_BLACK, color, i, ANIMATION_TIME_MS);
@@ -455,7 +458,7 @@ public:
 
     static void celebrate() {
         begun = true;
-        shift_color_all(colors[led_color_idx], COLOR_BLACK);
+        shift_color_all(current_color(), COLOR_BLACK);
         shift_color_heart(COLOR_BLACK, COLOR_RED, 500);
         play_happy_birthday();
         for(uint16_t i = 0; i < 10800; ++i) {
@@ -501,7 +504,7 @@ void setup() {
 
     tick();
     calculate_next_leds();
-    shift_color_all(COLOR_BLACK, colors[led_color_idx]);
+    shift_color_all(COLOR_BLACK, current_color());
 }
 
 void loop() {
@@ -511,7 +514,7 @@ void loop() {
         Birthday::celebrate();
         tick();
         calculate_next_leds();
-        shift_color_all(COLOR_BLACK, colors[led_color_idx]);
+        shift_color_all(COLOR_BLACK, current_color());
         return;
     }
 
