@@ -161,7 +161,7 @@ LedArray H[] = {
     LedArray(28, 33)     // H_12
 };
 
-uint8_t seconds_led = 0;
+uint8_t seconds_led = 1;
 LedArray minute_led = M_NONE;
 LedArray hour_led = H[0];
 LedArray oclock_led = O_OCLOCK;
