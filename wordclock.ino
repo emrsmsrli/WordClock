@@ -249,15 +249,6 @@ void tick() {
     time.yy = bcd2dec(Wire.read());
 }
 
-void on_color_button_pressed() {
-    uint8_t old_led_color_idx = led_color_idx;
-
-    led_color_idx = (led_color_idx + 1) % N_COLORS;
-    EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
-
-    shift_color_all(colors[old_led_color_idx], current_color());
-}
-
 void write_time(uint8_t m, uint8_t h) {
     Wire.beginTransmission(ADDRESS_DS1307);
     Wire.write(ZERO);
@@ -271,31 +262,6 @@ void write_time(uint8_t m, uint8_t h) {
     Wire.write(dec2bcd(time.yy));
 
     Wire.endTransmission();
-}
-
-void on_time_button_pressed() {
-    uint8_t h = time.h;
-    uint8_t m = time.m + 1;
-
-    if(m == 60) {
-        m = 0;
-        if(++h == 24) {
-            h = 0;
-        }
-    }
-
-    write_time(m, h);
-}
-
-void on_time_button_double_pressed() {
-    uint8_t h = time.h + 1;
-    uint8_t m = time.m;
-
-    if(h == 24) {
-        h = 0;
-    }
-
-    write_time(m, h);
 }
 
 inline void save_last_leds() {
@@ -396,15 +362,15 @@ void display_time() {
 }
 
 class Birthday {
-    static void shift_color_heart(uint32_t oldC, uint32_t newC, uint16_t d) {
+    static void shift_color_heart(uint32_t old_color, uint32_t new_color, uint16_t dly) {
         ANIMATE(i, ANIMATION_TIME_MS) {
-            uint32_t shift = shift_color(i, ANIMATION_TIME_MS, oldC, newC);
+            uint32_t shift = shift_color(i, ANIMATION_TIME_MS, old_color, new_color);
             for(uint8_t h_l = 0; h_l < 18; ++h_l)
                 pixels.setPixelColor(heart[h_l], shift);
             pixels.show();
             delayMicroseconds(1000);
         }
-        delay(d);
+        delay(dly);
     }
 
     static void play_note(uint16_t tone, uint16_t duration) {
@@ -425,7 +391,7 @@ class Birthday {
                             2, 2, 8, 8, 8 ,8, 16, 1, 2, 2, 8, 8, 8, 16};
         uint16_t spee_mult = SONG_TEMPO / SPEE;
         for (int i = 0; i < 28; i++) {
-            if (!notes[i])  delay(beats[i] * SONG_TEMPO);
+            if (!notes[i]) delay(beats[i] * SONG_TEMPO);
             else play_note(notes[i], beats[i] * spee_mult);
             delay(SONG_TEMPO);
         }
@@ -443,17 +409,19 @@ class Birthday {
 public:
     static bool begun;
     static volatile bool cancelled;
+    static volatile bool manual_begin;
 
     static void begin() {
         begun = false;
         cancelled = false;
+        manual_begin = false;
         pinMode(PIN_SPEAKER, OUTPUT);
     }
 
     static bool is_today() {
-        return time.dd == 4 && time.mm == 11
+        return (time.dd == 4 && time.mm == 11
                && (time.h == 8 || time.h == 12 || time.h == 17)
-               && time.m == 0 && time.s == 0;
+               && time.m == 0 && time.s == 0) || manual_begin;
     }
 
     static void celebrate() {
@@ -468,12 +436,54 @@ public:
                 break;
             }
         }
+        manual_begin = false;
         begun = false;
     }
 };
 
 bool Birthday::begun;
 volatile bool Birthday::cancelled;
+volatile bool Birthday::manual_begin;
+
+void on_color_button_pressed() {
+    uint8_t old_led_color_idx = led_color_idx;
+
+    led_color_idx = (led_color_idx + 1) % N_COLORS;
+    EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
+
+    shift_color_all(colors[old_led_color_idx], current_color());
+}
+
+void on_color_button_double_pressed() {
+    if(!Birthday::begun) {
+        Birthday::manual_begin = true;
+    }
+}
+
+void on_time_button_pressed() {
+    uint8_t h = time.h;
+    uint8_t m = time.m + 1;
+
+    if(m == 60) {
+        m = 0;
+        if(++h == 24) {
+            h = 0;
+        }
+    }
+
+    write_time(m, h);
+}
+
+void on_time_button_double_pressed() {
+    uint8_t h = time.h + 1;
+    uint8_t m = time.m;
+
+    if(h == 24) {
+        h = 0;
+    }
+
+    write_time(m, h);
+}
 
 void color_isr() {
     COLOR_BUTTON->update();
@@ -489,10 +499,9 @@ void time_isr() {
 void setup() {
     Wire.begin();
 
-    COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed);
+    COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed, on_color_button_double_pressed);
     TIME_BUTTON = new Button(PIN_TIME_BUTTON, time_isr, on_time_button_pressed, on_time_button_double_pressed);
 
-    // Read color if stored in EEPROM
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
     if(led_color_idx > (N_COLORS - 1))
         led_color_idx = 0;
