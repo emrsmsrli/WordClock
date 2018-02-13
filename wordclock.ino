@@ -498,6 +498,8 @@ void time_isr() {
 
 void setup() {
     Wire.begin();
+    pixels.begin();
+    Birthday::begin();
 
     COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed, on_color_button_double_pressed);
     TIME_BUTTON = new Button(PIN_TIME_BUTTON, time_isr, on_time_button_pressed, on_time_button_double_pressed);
@@ -505,11 +507,6 @@ void setup() {
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
     if(led_color_idx > (N_COLORS - 1))
         led_color_idx = 0;
-
-    pixels.begin();
-    pixels.clear();
-
-    Birthday::begin();
 
     tick();
     calculate_next_leds();
