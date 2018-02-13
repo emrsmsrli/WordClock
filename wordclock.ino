@@ -486,7 +486,10 @@ void on_time_button_double_pressed() {
 }
 
 void color_isr() {
-    COLOR_BUTTON->update();
+    if(Birthday::begun && !Birthday::cancelled)
+        Birthday::cancelled = true;
+    else
+        COLOR_BUTTON->update();
 }
 
 void time_isr() {
