@@ -504,6 +504,8 @@ void setup() {
     pixels.begin();
     Birthday::begin();
 
+    pixels.show();
+
     COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed, on_color_button_double_pressed);
     TIME_BUTTON = new Button(PIN_TIME_BUTTON, time_isr, on_time_button_pressed, on_time_button_double_pressed);
 
