@@ -45,19 +45,21 @@ class Button {
     enum State {
         RELEASED = 0,
         PRESSED,
-        CLICKED_SINGLE,
-        CLICKED_DOUBLE
+        PRESSED_SINGLE,
+        PRESSED_DOUBLE,
+        PRESSED_LONG
     };
 
     uint8_t pin;
     uint8_t state;
     volatile unsigned long start_time;
     volatile unsigned long stop_time;
-    volatile bool single_clicked;
-    volatile bool double_clicked;
+    volatile bool single_pressed;
+    volatile bool double_pressed;
+    volatile bool long_pressed;
 
-    void(*single_click_action)();
-    void(*double_click_action)();
+    void(*single_pressed_action)();
+    void(*double_pressed_action)();
 
 public:
     Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = NULL) {
@@ -65,10 +67,11 @@ public:
         state = RELEASED;
         start_time = 0;
         stop_time = 0;
-        single_clicked = false;
-        double_clicked = false;
-        single_click_action = _single;
-        double_click_action = _double;
+        single_pressed = false;
+        double_pressed = false;
+        long_pressed = false;
+        single_pressed_action = _single;
+        double_pressed_action = _double;
         pinMode(pin, INPUT);
         attachInterrupt((uint8_t) digitalPinToInterrupt(pin), _isr, FALLING);
     }
@@ -76,15 +79,19 @@ public:
     void perform_clicks() {
         noInterrupts();
         update();
-        if(single_clicked) {
-            single_clicked = false;
+        if(single_pressed) {
+            single_pressed = false;
             interrupts();
-            if(single_click_action) single_click_action();
-        } else if(double_clicked) {
-            double_clicked = false;
+            if(single_pressed_action) single_pressed_action();
+        } else if(double_pressed) {
+            double_pressed = false;
             interrupts();
-            if(double_click_action) double_click_action();
+            if(double_pressed_action) double_pressed_action();
         }
+    }
+
+    bool isLongPressed() {
+        return long_pressed;
     }
 
     void update() {
@@ -94,7 +101,7 @@ public:
         switch(state) {
             case RELEASED:
                 if(button_pressed) {
-                    if(single_clicked || double_clicked)
+                    if(single_pressed || double_pressed)
                         break;
                     state = PRESSED;
                     start_time = now;
@@ -104,23 +111,33 @@ public:
                 if(!button_pressed && now - start_time < BTN_DEBOUNCE_THRESHOLD) {
                     state = RELEASED;
                 } else if(!button_pressed) {
-                    state = CLICKED_SINGLE;
+                    state = PRESSED_SINGLE;
+                    stop_time = now;
+                } else if(now - start_time > BTN_PRESS_L_THRESHOLD) {
+                    long_pressed = true;
+                    state = PRESSED_LONG;
                     stop_time = now;
                 }
                 break;
-            case CLICKED_SINGLE:
-                if(now - start_time > BTN_CLICK_THRESHOLD) {
-                    single_clicked = true;
+            case PRESSED_SINGLE:
+                if(now - start_time > BTN_PRESS_THRESHOLD) {
+                    single_pressed = true;
                     state = RELEASED;
                 } else if(button_pressed && now - stop_time > BTN_DEBOUNCE_THRESHOLD) {
-                    state = CLICKED_DOUBLE;
+                    state = PRESSED_DOUBLE;
                     start_time = now;
                 }
                 break;
-            case CLICKED_DOUBLE:
+            case PRESSED_DOUBLE:
                 if(!button_pressed && now - start_time > BTN_DEBOUNCE_THRESHOLD) {
-                    single_clicked = false;
-                    double_clicked = true;
+                    single_pressed = false;
+                    double_pressed = true;
+                    state = RELEASED;
+                }
+                break;
+            case PRESSED_LONG:
+                if(!button_pressed) {
+                    long_pressed = false;
                     state = RELEASED;
                 }
             default:
