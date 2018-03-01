@@ -45,19 +45,21 @@ class Button {
     enum State {
         RELEASED = 0,
         PRESSED,
-        CLICKED_SINGLE,
-        CLICKED_DOUBLE
+        PRESSED_SINGLE,
+        PRESSED_DOUBLE,
+        PRESSED_LONG
     };
 
     uint8_t pin;
     uint8_t state;
     volatile unsigned long start_time;
     volatile unsigned long stop_time;
-    volatile bool single_clicked;
-    volatile bool double_clicked;
+    volatile bool single_pressed;
+    volatile bool double_pressed;
+    volatile bool long_pressed;
 
-    void(*single_click_action)();
-    void(*double_click_action)();
+    void(*single_pressed_action)();
+    void(*double_pressed_action)();
 
 public:
     Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = NULL) {
@@ -65,10 +67,11 @@ public:
         state = RELEASED;
         start_time = 0;
         stop_time = 0;
-        single_clicked = false;
-        double_clicked = false;
-        single_click_action = _single;
-        double_click_action = _double;
+        single_pressed = false;
+        double_pressed = false;
+        long_pressed = false;
+        single_pressed_action = _single;
+        double_pressed_action = _double;
         pinMode(pin, INPUT);
         attachInterrupt((uint8_t) digitalPinToInterrupt(pin), _isr, FALLING);
     }
@@ -76,15 +79,19 @@ public:
     void perform_clicks() {
         noInterrupts();
         update();
-        if(single_clicked) {
-            single_clicked = false;
+        if(single_pressed) {
+            single_pressed = false;
             interrupts();
-            if(single_click_action) single_click_action();
-        } else if(double_clicked) {
-            double_clicked = false;
+            if(single_pressed_action) single_pressed_action();
+        } else if(double_pressed) {
+            double_pressed = false;
             interrupts();
-            if(double_click_action) double_click_action();
+            if(double_pressed_action) double_pressed_action();
         }
+    }
+
+    bool isLongPressed() {
+        return long_pressed;
     }
 
     void update() {
@@ -94,7 +101,7 @@ public:
         switch(state) {
             case RELEASED:
                 if(button_pressed) {
-                    if(single_clicked || double_clicked)
+                    if(single_pressed || double_pressed)
                         break;
                     state = PRESSED;
                     start_time = now;
@@ -104,23 +111,33 @@ public:
                 if(!button_pressed && now - start_time < BTN_DEBOUNCE_THRESHOLD) {
                     state = RELEASED;
                 } else if(!button_pressed) {
-                    state = CLICKED_SINGLE;
+                    state = PRESSED_SINGLE;
+                    stop_time = now;
+                } else if(now - start_time > BTN_PRESS_L_THRESHOLD) {
+                    long_pressed = true;
+                    state = PRESSED_LONG;
                     stop_time = now;
                 }
                 break;
-            case CLICKED_SINGLE:
-                if(now - start_time > BTN_CLICK_THRESHOLD) {
-                    single_clicked = true;
+            case PRESSED_SINGLE:
+                if(now - start_time > BTN_PRESS_THRESHOLD) {
+                    single_pressed = true;
                     state = RELEASED;
                 } else if(button_pressed && now - stop_time > BTN_DEBOUNCE_THRESHOLD) {
-                    state = CLICKED_DOUBLE;
+                    state = PRESSED_DOUBLE;
                     start_time = now;
                 }
                 break;
-            case CLICKED_DOUBLE:
+            case PRESSED_DOUBLE:
                 if(!button_pressed && now - start_time > BTN_DEBOUNCE_THRESHOLD) {
-                    single_clicked = false;
-                    double_clicked = true;
+                    single_pressed = false;
+                    double_pressed = true;
+                    state = RELEASED;
+                }
+                break;
+            case PRESSED_LONG:
+                if(!button_pressed) {
+                    long_pressed = false;
                     state = RELEASED;
                 }
             default:
@@ -147,18 +164,18 @@ LedArray M_25(83, 93);
 LedArray M_30(79, 82);
 
 LedArray H[] = {
-    LedArray(58, 60),    // H_1
-    LedArray(55, 57),    // H_2
-    LedArray(50, 54),    // H_3
-    LedArray(39, 42),    // H_4
-    LedArray(43, 46),    // H_5
-    LedArray(47, 49),    // H_6
-    LedArray(66, 70),    // H_7
-    LedArray(17, 21),    // H_8
-    LedArray(35, 38),    // H_9
-    LedArray(14, 16),    // H_10
-    LedArray(22, 27),    // H_11
-    LedArray(28, 33)     // H_12
+        LedArray(58, 60),    // H_1
+        LedArray(55, 57),    // H_2
+        LedArray(50, 54),    // H_3
+        LedArray(39, 42),    // H_4
+        LedArray(43, 46),    // H_5
+        LedArray(47, 49),    // H_6
+        LedArray(66, 70),    // H_7
+        LedArray(17, 21),    // H_8
+        LedArray(35, 38),    // H_9
+        LedArray(14, 16),    // H_10
+        LedArray(22, 27),    // H_11
+        LedArray(28, 33)     // H_12
 };
 
 uint8_t seconds_led = 1;
@@ -173,14 +190,14 @@ LedArray last_oclock_led = oclock_led;
 
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
-    pixels.Color(247, 139, 15),     // orange
-    // pixels.Color(71,  5,   20),     // claret dont forget to increment N_COLORS
-    pixels.Color(127, 127, 0),      // yellow
-    pixels.Color(127, 0,   127),    // magenta
-    pixels.Color(0,   127, 127),    // cyan
-    pixels.Color(0,   0,   255),    // blue
-    pixels.Color(0,   255, 0),      // green
-    pixels.Color(255, 0,   0)       // red
+        pixels.Color(247, 139, 15),     // orange
+        // pixels.Color(71,  5,   20),     // claret dont forget to increment N_COLORS
+        pixels.Color(127, 127, 0),      // yellow
+        pixels.Color(127, 0,   127),    // magenta
+        pixels.Color(0,   127, 127),    // cyan
+        pixels.Color(0,   0,   255),    // blue
+        pixels.Color(0,   255, 0),      // green
+        pixels.Color(255, 0,   0)       // red
 };
 
 uint8_t heart[] = {11, 21, 23, 31, 35, 41, 47, 51, 59, 61, 71, 72, 77, 82, 84, 87, 89, 92};
@@ -420,8 +437,8 @@ public:
 
     static bool is_today() {
         return (time.dd == 4 && time.mm == 11
-               && (time.h == 8 || time.h == 12 || time.h == 17)
-               && time.m == 0 && time.s == 0) || manual_begin;
+                && (time.h == 8 || time.h == 12 || time.h == 17)
+                && time.m == 0 && time.s == 0) || manual_begin;
     }
 
     static void celebrate() {
@@ -503,6 +520,8 @@ void setup() {
     Wire.begin();
     pixels.begin();
     Birthday::begin();
+
+    pixels.show();
 
     COLOR_BUTTON = new Button(PIN_COLOR_BUTTON, color_isr, on_color_button_pressed, on_color_button_double_pressed);
     TIME_BUTTON = new Button(PIN_TIME_BUTTON, time_isr, on_time_button_pressed, on_time_button_double_pressed);
