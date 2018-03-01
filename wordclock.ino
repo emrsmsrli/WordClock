@@ -552,4 +552,8 @@ void loop() {
 
     COLOR_BUTTON->perform_clicks();
     TIME_BUTTON->perform_clicks();
+
+    if(TIME_BUTTON->isLongPressed()) {
+        // TODO implement digital clock mode
+    }
 }
