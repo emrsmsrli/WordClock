@@ -22,8 +22,7 @@
 #define COLOR_RED               (uint32_t) 0xFF0000
 
 #define BTN_DEBOUNCE_THRESHOLD  50
-#define BTN_PRESS_THRESHOLD     300
-#define BTN_PRESS_L_THRESHOLD   1000
+#define BTN_CLICK_THRESHOLD     300
 
 #define ANIMATION_TIME_MS       200
 #define ANIMATE(i, duration)    for(uint8_t (i) = 0; (i) <= (duration); (i)++)
