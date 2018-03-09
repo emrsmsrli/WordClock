@@ -203,9 +203,10 @@ uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
 
 color extract_color(uint32_t c) {
     color clr;
-    clr.r = c >> 16;
-    clr.g = c >> 8 & 0xFF;
-    clr.b = c & 0xFF;
+    if(c == 0)
+        clr.set(0, 0, 0);
+
+    clr.set(c >> 16, c >> 8 & 0xFF, c & 0xFF);
     return clr;
 }
 

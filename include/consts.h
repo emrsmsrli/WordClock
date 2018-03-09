@@ -41,10 +41,16 @@
 #define SONG_TEMPO              175
 #define SPEE                    5
 
-typedef struct {
+typedef struct color_t {
     uint8_t r;
     uint8_t g;
     uint8_t b;
+
+    void set(uint8_t r, uint8_t g, uint8_t b) {
+        this->r = r;
+        this->g = g;
+        this->b = b;
+    }
 } color;
 
 #endif //WORDCLOCK_CONSTS_H
