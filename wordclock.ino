@@ -171,6 +171,8 @@ LedArray last_minute_led = minute_led;
 LedArray last_hour_led = hour_led;
 LedArray last_oclock_led = oclock_led;
 
+uint8_t brightness = BRIGHTNESS_HIGH;
+
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
         pixels.Color(247, 139, 15),     // orange
@@ -203,10 +205,16 @@ uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
 
 color extract_color(uint32_t c) {
     color clr;
-    if(c == 0)
-        clr.set(0, 0, 0);
-
-    clr.set(c >> 16, c >> 8 & 0xFF, c & 0xFF);
+    if(c == 0) {
+        clr.r = 0;
+        clr.g = 0;
+        clr.b = 0;
+    } else {
+        float brightness_mult = brightness / (float)BRIGHTNESS_HIGH;
+        clr.r = (uint8_t) ((c >> 16) * brightness_mult);
+        clr.g = (uint8_t) ((c >> 8 & 0xFF) * brightness_mult);
+        clr.b = (uint8_t) ((c & 0xFF) * brightness_mult);
+    }
     return clr;
 }
 
@@ -499,6 +507,20 @@ void time_isr() {
         TIME_BUTTON->update();
 }
 
+void adjust_brightness() {
+    uint8_t old_b = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
+    color old_b_c = extract_color(current_color());
+
+    if(time.h > 21 || time.h < 7)   brightness = BRIGHTNESS_HIGH;
+    else                            brightness = BRIGHTNESS_LOW;
+    EEPROM.update(ADDRESS_EEPROM_BRIGHTN, brightness);
+
+    if(old_b != brightness) {
+        uint32_t old_color = pixels.Color(old_b_c.r, old_b_c.g, old_b_c.b);
+        shift_color_all(old_color, current_color());
+    }
+}
+
 void setup() {
     Wire.begin();
     pixels.begin();
@@ -512,6 +534,10 @@ void setup() {
     led_color_idx = EEPROM.read(ADDRESS_EEPROM_COLOR);
     if(led_color_idx > (N_COLORS - 1))
         led_color_idx = 0;
+
+    brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
+    if(brightness != BRIGHTNESS_LOW || brightness != BRIGHTNESS_HIGH)
+        brightness = BRIGHTNESS_HIGH;
 
     tick();
     calculate_next_leds();
@@ -535,4 +561,6 @@ void loop() {
 
     COLOR_BUTTON->perform_clicks();
     TIME_BUTTON->perform_clicks();
+
+    adjust_brightness();
 }

@@ -8,7 +8,8 @@
 #define UNUSED_LED_FOR_25       89
 
 #define ADDRESS_DS1307          0x68
-#define ADDRESS_EEPROM_COLOR    0
+#define ADDRESS_EEPROM_COLOR    0x0
+#define ADDRESS_EEPROM_BRIGHTN  0x4
 #define PIN_TIME_BUTTON         PIN3    // FIXME time 2
 #define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
 #define PIN_NEOPIXELS           PIN4
@@ -20,6 +21,9 @@
 
 #define COLOR_BLACK             (uint32_t) 0x000000
 #define COLOR_RED               (uint32_t) 0xFF0000
+
+#define BRIGHTNESS_LOW          0x20    // 0.125
+#define BRIGHTNESS_HIGH         0xFF    // 1.000
 
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
@@ -41,16 +45,10 @@
 #define SONG_TEMPO              175
 #define SPEE                    5
 
-typedef struct color_t {
+typedef struct {
     uint8_t r;
     uint8_t g;
     uint8_t b;
-
-    void set(uint8_t r, uint8_t g, uint8_t b) {
-        this->r = r;
-        this->g = g;
-        this->b = b;
-    }
 } color;
 
 #endif //WORDCLOCK_CONSTS_H
