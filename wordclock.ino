@@ -174,7 +174,6 @@ LedArray last_oclock_led = oclock_led;
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
         pixels.Color(247, 139, 15),     // orange
-        // pixels.Color(71,  5,   20),     // claret dont forget to increment N_COLORS
         pixels.Color(127, 127, 0),      // yellow
         pixels.Color(127, 0,   127),    // magenta
         pixels.Color(0,   127, 127),    // cyan
