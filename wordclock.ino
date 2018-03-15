@@ -184,8 +184,6 @@ uint32_t colors[] = {
         pixels.Color(255, 0,   0)       // red
 };
 
-uint8_t heart[] = {11, 21, 23, 31, 35, 41, 47, 51, 59, 61, 71, 72, 77, 82, 84, 87, 89, 92};
-
 uint32_t current_color() {
     return colors[led_color_idx];
 }
@@ -371,6 +369,8 @@ void display_time() {
 
 class Birthday {
     static void shift_color_heart(uint32_t old_color, uint32_t new_color, uint16_t dly) {
+        uint8_t heart[] = {11, 21, 23, 31, 35, 41, 47, 51, 59, 61, 71, 72, 77, 82, 84, 87, 89, 92};
+
         ANIMATE(i, ANIMATION_TIME_MS) {
             uint32_t shift = shift_color(i, ANIMATION_TIME_MS, old_color, new_color);
             for(uint8_t h_l = 0; h_l < 18; ++h_l)
