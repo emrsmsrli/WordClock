@@ -427,9 +427,9 @@ public:
     }
 
     static bool is_today() {
-        return (time.dd == 4 && time.mm == 11
+        return manual_begin || (time.dd == 4 && time.mm == 11
                 && (time.h == 8 || time.h == 12 || time.h == 17)
-                && time.m == 0 && time.s == 0) || manual_begin;
+                && time.m == 0 && time.s == 0);
     }
 
     static void celebrate() {
