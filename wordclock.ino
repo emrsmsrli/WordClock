@@ -205,7 +205,7 @@ uint8_t bcd2dec(int val) {
 
 uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
     float v = SMOOTH_STEP(i / (float) N);
-    return (uint8_t) ((min * v) + (max * (1 - v)));
+    return (uint8_t) ((max * v) + (min * (1 - v)));
 }
 
 color extract_color(uint32_t c) {
