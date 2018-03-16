@@ -185,7 +185,14 @@ uint32_t colors[] = {
 };
 
 uint32_t current_color() {
-    return colors[led_color_idx];
+    float brightness_mult = brightness / (float)BRIGHTNESS_HIGH;
+    color c = extract_color(colors[led_color_idx]);
+
+    return pixels.Color(
+            (uint8_t)(c.r * brightness_mult),
+            (uint8_t)(c.g * brightness_mult),
+            (uint8_t)(c.b * brightness_mult)
+    );
 }
 
 int dec2bcd(uint8_t val) {
@@ -203,16 +210,9 @@ uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
 
 color extract_color(uint32_t c) {
     color clr;
-    if(c == 0) {
-        clr.r = 0;
-        clr.g = 0;
-        clr.b = 0;
-    } else {
-        float brightness_mult = brightness / (float)BRIGHTNESS_HIGH;
-        clr.r = (uint8_t) ((c >> 16) * brightness_mult);
-        clr.g = (uint8_t) ((c >> 8 & 0xFF) * brightness_mult);
-        clr.b = (uint8_t) ((c & 0xFF) * brightness_mult);
-    }
+    clr.r = c >> 16;
+    clr.g = c >> 8 & 0xFF;
+    clr.b = c & 0xFF;
     return clr;
 }
 
@@ -508,15 +508,14 @@ void time_isr() {
 }
 
 void adjust_brightness() {
-    uint8_t old_b = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
-    color old_b_c = extract_color(current_color());
+    uint8_t old_brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
+    uint32_t old_color = current_color();
 
     if(time.h > 21 || time.h < 7)   brightness = BRIGHTNESS_HIGH;
     else                            brightness = BRIGHTNESS_LOW;
     EEPROM.update(ADDRESS_EEPROM_BRIGHTN, brightness);
 
-    if(old_b != brightness) {
-        uint32_t old_color = pixels.Color(old_b_c.r, old_b_c.g, old_b_c.b);
+    if(old_brightness != brightness) {
         shift_color_all(old_color, current_color());
     }
 }
