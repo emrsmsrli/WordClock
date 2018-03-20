@@ -327,7 +327,7 @@ void display_time() {
             break;
 
         pixels.show();
-        delayMicroseconds(1000);
+        delayMicroseconds(900);
     }
 }
 
