@@ -10,8 +10,8 @@
 #define ADDRESS_DS1307          0x68
 #define ADDRESS_EEPROM_COLOR    0x0
 #define ADDRESS_EEPROM_BRIGHTN  0x4
-#define PIN_TIME_BUTTON         PIN3    // FIXME time 2
-#define PIN_COLOR_BUTTON        PIN2    // FIXME color 3?
+#define PIN_TIME_BUTTON         PIN2
+#define PIN_COLOR_BUTTON        PIN3
 #define PIN_NEOPIXELS           PIN4
 #define PIN_SPEAKER             PIN7
 
