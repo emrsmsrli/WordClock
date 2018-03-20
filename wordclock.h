@@ -4,10 +4,8 @@
 
 #include "Arduino.h"
 
-#define ZERO                    (uint8_t)(0x00)     // workaround for issue #527
 #define UNUSED_LED_FOR_25       89
 
-#define ADDRESS_DS1307          0x68
 #define ADDRESS_EEPROM_COLOR    0x0
 #define ADDRESS_EEPROM_BRIGHTN  0x4
 #define PIN_TIME_BUTTON         PIN2
@@ -52,14 +50,11 @@ typedef struct {
 } color;
 
 uint32_t current_color();
-int dec2bcd(uint8_t val);
-uint8_t bcd2dec(int val);
 uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max);
 color extract_color(uint32_t c);
 uint32_t shift_color(uint8_t i, uint8_t N, uint32_t old_color, uint32_t new_color);
 void shift_color_all(uint32_t old_color, uint32_t new_color);
 void tick();
-void write_time(uint8_t m, uint8_t h);
 void calculate_next_leds();
 void display_time();
 void on_color_button_pressed();

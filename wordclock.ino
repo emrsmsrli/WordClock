@@ -1,18 +1,14 @@
 #include <EEPROM.h>
-#include <Wire.h>
+#include <RTClib.h>
 #include <Adafruit_NeoPixel.h>
 #include "wordclock.h"
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
-struct {
-    uint8_t s;
-    uint8_t m;
-    uint8_t h;
-    uint8_t dd;
-    uint8_t mm;
-    uint8_t yy;
-} time;
+RTC_DS1307 rtc;
+DateTime time;
+TimeSpan ONE_MIN(0, 0, 1, 0);
+TimeSpan ONE_HOUR(0, 1, 0, 0);
 
 class LedArray {
     uint8_t start;
@@ -197,14 +193,6 @@ uint32_t current_color() {
     );
 }
 
-int dec2bcd(uint8_t val) {
-    return val / 10 * 16 + val % 10;
-}
-
-uint8_t bcd2dec(int val) {
-    return (uint8_t) (val / 16 * 10 + val % 16);
-}
-
 uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
     float v = SMOOTH_STEP(i / (float) N);
     return (uint8_t) ((max * v) + (min * (1 - v)));
@@ -243,33 +231,7 @@ void shift_color_all(uint32_t old_color, uint32_t new_color) {
 }
 
 void tick() {
-    Wire.beginTransmission(ADDRESS_DS1307);
-    Wire.write(ZERO);
-    Wire.endTransmission();
-
-    Wire.requestFrom(ADDRESS_DS1307, 7);
-    time.s = bcd2dec(Wire.read() & 0x7F);
-    time.m = bcd2dec(Wire.read());
-    time.h = bcd2dec(Wire.read() & 0x3F);
-    Wire.read();
-    time.dd = bcd2dec(Wire.read());
-    time.mm = bcd2dec(Wire.read());
-    time.yy = bcd2dec(Wire.read());
-}
-
-void write_time(uint8_t m, uint8_t h) {
-    Wire.beginTransmission(ADDRESS_DS1307);
-    Wire.write(ZERO);
-
-    Wire.write(dec2bcd(0));
-    Wire.write(dec2bcd(m));
-    Wire.write(dec2bcd(h));
-    Wire.write(dec2bcd(1));
-    Wire.write(dec2bcd(time.dd));
-    Wire.write(dec2bcd(time.mm));
-    Wire.write(dec2bcd(time.yy));
-
-    Wire.endTransmission();
+    time = rtc.now();
 }
 
 inline void save_last_leds() {
@@ -280,9 +242,9 @@ inline void save_last_leds() {
 }
 
 void calculate_next_leds() {
-    uint8_t hour = time.h;
-    uint8_t min = time.m;
-    uint8_t sec = time.s;
+    uint8_t hour = time.hour();
+    uint8_t min = time.minute();
+    uint8_t sec = time.second();
 
     seconds_led = sec % N_SECONDS_LED + 1;
 
@@ -430,9 +392,9 @@ public:
     }
 
     static bool is_today() {
-        return manual_begin || (time.dd == 4 && time.mm == 11
-                && (time.h == 8 || time.h == 12 || time.h == 17)
-                && time.m == 0 && time.s == 0);
+        return manual_begin || (time.day() == 4 && time.month() == 11
+                && (time.hour() == 8 || time.hour() == 12 || time.hour() == 17)
+                && time.minute() == 0 && time.second() == 0);
     }
 
     static void celebrate() {
@@ -442,11 +404,9 @@ public:
         play_happy_birthday();
         for(uint16_t i = 0; i < 10800; ++i) {
             delay(1000);
-            if(cancel()) {
-                shift_color_heart(COLOR_RED, COLOR_BLACK, 0);
-                break;
-            }
+            if(cancel()) break;
         }
+        shift_color_heart(COLOR_RED, COLOR_BLACK, 0);
         manual_begin = false;
         begun = false;
     }
@@ -472,28 +432,13 @@ void on_color_button_double_pressed() {
 }
 
 void on_time_button_pressed() {
-    uint8_t h = time.h;
-    uint8_t m = time.m + 1;
-
-    if(m == 60) {
-        m = 0;
-        if(++h == 24) {
-            h = 0;
-        }
-    }
-
-    write_time(m, h);
+    rtc.adjust(time + ONE_MIN);
+    time = rtc.now();
 }
 
 void on_time_button_double_pressed() {
-    uint8_t h = time.h + 1;
-    uint8_t m = time.m;
-
-    if(h == 24) {
-        h = 0;
-    }
-
-    write_time(m, h);
+    rtc.adjust(time + ONE_HOUR);
+    time = rtc.now();
 }
 
 void color_isr() {
@@ -514,8 +459,10 @@ void adjust_brightness() {
     uint8_t old_brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
     uint32_t old_color = current_color();
 
-    if(time.h > 21 || time.h < 7)   brightness = BRIGHTNESS_HIGH;
-    else                            brightness = BRIGHTNESS_LOW;
+    if(time.hour() > 21 || time.hour() < 7)
+        brightness = BRIGHTNESS_HIGH;
+    else
+        brightness = BRIGHTNESS_LOW;
     EEPROM.update(ADDRESS_EEPROM_BRIGHTN, brightness);
 
     if(old_brightness != brightness) {
@@ -524,7 +471,7 @@ void adjust_brightness() {
 }
 
 void setup() {
-    Wire.begin();
+    rtc.begin();
     pixels.begin();
     Birthday::begin();
 
