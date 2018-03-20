@@ -457,12 +457,12 @@ volatile bool Birthday::cancelled;
 volatile bool Birthday::manual_begin;
 
 void on_color_button_pressed() {
-    uint8_t old_led_color_idx = led_color_idx;
+    uint32_t old_color = current_color();
 
     led_color_idx = (led_color_idx + 1) % N_COLORS;
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
 
-    shift_color_all(colors[old_led_color_idx], current_color());
+    shift_color_all(old_color, current_color());
 }
 
 void on_color_button_double_pressed() {
