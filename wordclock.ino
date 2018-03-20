@@ -84,6 +84,8 @@ public:
             double_clicked = false;
             interrupts();
             if(double_click_action) double_click_action();
+        } else {
+            interrupts();
         }
     }
 
