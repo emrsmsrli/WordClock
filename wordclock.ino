@@ -99,9 +99,9 @@ public:
                 }
                 break;
             case PRESSED:
-                if(!button_pressed && now - start_time < BTN_DEBOUNCE_THRESHOLD) {
+                if(!button_pressed && now - start_time < BTN_DEBOUNCE_THRESHOLD)
                     state = RELEASED;
-                } else if(!button_pressed) {
+                else if(!button_pressed) {
                     state = CLICKED_SINGLE;
                     stop_time = now;
                 }
@@ -253,33 +253,31 @@ void calculate_next_leds() {
         minute_led = M_NONE;
     } else if(min < 35) {           /// 5 - 35
         oclock_led = O_PAST;
-        if(min < 10) {              // 5 - 10
+        if(min < 10)                // 5 - 10
             minute_led = M_5;
-        } else if(min < 15) {       // 10 - 15
+        else if(min < 15)           // 10 - 15
             minute_led = M_10;
-        } else if(min < 20) {       // 15 - 20
+        else if(min < 20)           // 15 - 20
             minute_led = M_15;
-        } else if(min < 25) {       // 20 - 25
+        else if(min < 25)           // 20 - 25
             minute_led = M_20;
-        } else if(min < 30) {       // 25 - 30
+        else if(min < 30)           // 25 - 30
             minute_led = M_25;
-        } else {                    // 30 - 35
+        else                        // 30 - 35
             minute_led = M_30;
-        }
     } else {                        /// 35 - 60
         hour = hour + 1;
         oclock_led = O_TO;
-        if(min < 40) {              // 35 - 40
+        if(min < 40)                // 35 - 40
             minute_led = M_25;
-        } else if(min < 45) {       // 40 - 45
+        else if(min < 45)           // 40 - 45
             minute_led = M_20;
-        } else if(min < 50) {       // 45 - 50
+        else if(min < 50)           // 45 - 50
             minute_led = M_15;
-        } else if(min < 55) {       // 50 - 55
+        else if(min < 55)           // 50 - 55
             minute_led = M_10;
-        } else {                    // 55 - 60
+        else                        // 55 - 60
             minute_led = M_5;
-        }
     }
 
     while(hour >= 12)
@@ -300,11 +298,11 @@ void display_time() {
             no_led_changed = false;
         }
         if(last_minute_led != minute_led) {
-            if(last_minute_led == M_20 && minute_led == M_25) {
+            if(last_minute_led == M_20 && minute_led == M_25)
                 M_5.paint(to_color);
-            } else if(last_minute_led == M_25 && minute_led == M_20) {
+            else if(last_minute_led == M_25 && minute_led == M_20)
                 M_5.paint(to_black);
-            } else {
+            else {
                 last_minute_led.paint(to_black);
                 minute_led.paint(to_color);
             }
@@ -401,7 +399,7 @@ public:
         shift_color_heart(COLOR_BLACK, COLOR_RED, 500);
         play_happy_birthday();
         for(uint16_t i = 0; i < 10800; ++i) {
-            delay(1000);
+            delay(950);
             if(cancel()) break;
         }
         shift_color_heart(COLOR_RED, COLOR_BLACK, 0);
@@ -424,19 +422,18 @@ void on_color_button_pressed() {
 }
 
 void on_color_button_double_pressed() {
-    if(!Birthday::begun) {
+    if(!Birthday::begun)
         Birthday::manual_begin = true;
-    }
 }
 
 void on_time_button_pressed() {
     rtc.adjust(time + ONE_MIN);
-    time = rtc.now();
+    tick();
 }
 
 void on_time_button_double_pressed() {
     rtc.adjust(time + ONE_HOUR);
-    time = rtc.now();
+    tick();
 }
 
 void color_isr() {
@@ -463,9 +460,8 @@ void adjust_brightness() {
         brightness = BRIGHTNESS_LOW;
     EEPROM.update(ADDRESS_EEPROM_BRIGHTN, brightness);
 
-    if(old_brightness != brightness) {
+    if(old_brightness != brightness)
         shift_color_all(old_color, current_color());
-    }
 }
 
 void setup() {
