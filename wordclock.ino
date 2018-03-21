@@ -21,7 +21,7 @@ public:
     }
 
     void paint(uint32_t color) {
-        for(uint8_t i = start; i <= end; ++i) {
+        for(uint8_t i = start; i < end; ++i) {
             if(i == UNUSED_LED_FOR_25)
                 continue;
             pixels.setPixelColor(i, color);
@@ -130,33 +130,33 @@ public:
 Button *TIME_BUTTON;
 Button *COLOR_BUTTON;
 
-LedArray IT(105, 106);
-LedArray IS(108, 109);
-LedArray O_OCLOCK(6, 11);
-LedArray O_PAST(61, 64);
-LedArray O_TO(72, 73);
+LedArray IT(105, 107);
+LedArray IS(108, 110);
+LedArray O_OCLOCK(6, 12);
+LedArray O_PAST(61, 65);
+LedArray O_TO(72, 74);
 
 LedArray M_NONE(0, 0);
-LedArray M_5(90, 93);
-LedArray M_10(75, 77);
-LedArray M_15(97, 103);
-LedArray M_20(83, 88);
-LedArray M_25(83, 93);
-LedArray M_30(79, 82);
+LedArray M_5(90, 94);
+LedArray M_10(75, 78);
+LedArray M_15(97, 104);
+LedArray M_20(83, 89);
+LedArray M_25(83, 94);
+LedArray M_30(79, 83);
 
 LedArray H[] = {
-        LedArray(58, 60),    // H_1
-        LedArray(55, 57),    // H_2
-        LedArray(50, 54),    // H_3
-        LedArray(39, 42),    // H_4
-        LedArray(43, 46),    // H_5
-        LedArray(47, 49),    // H_6
-        LedArray(66, 70),    // H_7
-        LedArray(17, 21),    // H_8
-        LedArray(35, 38),    // H_9
-        LedArray(14, 16),    // H_10
-        LedArray(22, 27),    // H_11
-        LedArray(28, 33)     // H_12
+        LedArray(58, 61),    // H_1
+        LedArray(55, 58),    // H_2
+        LedArray(50, 55),    // H_3
+        LedArray(39, 43),    // H_4
+        LedArray(43, 47),    // H_5
+        LedArray(47, 50),    // H_6
+        LedArray(66, 71),    // H_7
+        LedArray(17, 22),    // H_8
+        LedArray(35, 39),    // H_9
+        LedArray(14, 17),    // H_10
+        LedArray(22, 28),    // H_11
+        LedArray(28, 34)     // H_12
 };
 
 uint8_t seconds_led = 1;
@@ -305,10 +305,8 @@ void display_time() {
             } else if(last_minute_led == M_25 && minute_led == M_20) {
                 M_5.paint(to_black);
             } else {
-                if(last_minute_led != M_NONE)
-                    last_minute_led.paint(to_black);
-                if(minute_led != M_NONE)
-                    minute_led.paint(to_color);
+                last_minute_led.paint(to_black);
+                minute_led.paint(to_color);
             }
             no_led_changed = false;
         }
