@@ -455,9 +455,9 @@ void adjust_brightness() {
     uint32_t old_color = current_color();
 
     if(time.hour() > 21 || time.hour() < 7)
-        brightness = BRIGHTNESS_HIGH;
-    else
         brightness = BRIGHTNESS_LOW;
+    else
+        brightness = BRIGHTNESS_HIGH;
     EEPROM.update(ADDRESS_EEPROM_BRIGHTN, brightness);
 
     if(old_brightness != brightness)
