@@ -450,11 +450,15 @@ void time_isr() {
         TIME_BUTTON->update();
 }
 
+bool is_night() {
+    return time.hour() > 21 || time.hour() < 7;
+}
+
 void adjust_brightness() {
     uint8_t old_brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
     uint32_t old_color = current_color();
 
-    if(time.hour() > 21 || time.hour() < 7)
+    if(is_night())
         brightness = BRIGHTNESS_LOW;
     else
         brightness = BRIGHTNESS_HIGH;
@@ -481,6 +485,8 @@ void setup() {
     brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
     if(brightness != BRIGHTNESS_LOW || brightness != BRIGHTNESS_HIGH)
         brightness = BRIGHTNESS_HIGH;
+    if(is_night())
+        brightness = BRIGHTNESS_LOW;
 
     tick();
     calculate_next_leds();

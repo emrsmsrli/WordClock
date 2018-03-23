@@ -64,5 +64,6 @@ void on_time_button_double_pressed();
 void color_isr();
 void time_isr();
 void adjust_brightness();
+bool is_night();
 
 #endif //WORDCLOCK_CONSTS_H
