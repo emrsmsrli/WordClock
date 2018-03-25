@@ -11,3 +11,4 @@ And uses a modified version of [OneButton](https://github.com/mathertel/OneButto
 - [x] Implement smoothstep interpolation to led animations
 - [x] Implement night mode, where overall led intensity is 0.125 instead of 1.0
 - [x] Implement happy birthday mode
+- [ ] Add documentation
