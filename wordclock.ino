@@ -482,13 +482,14 @@ void setup() {
     if(led_color_idx > (N_COLORS - 1))
         led_color_idx = 0;
 
+    tick();
+
     brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
     if(brightness != BRIGHTNESS_LOW || brightness != BRIGHTNESS_HIGH)
         brightness = BRIGHTNESS_HIGH;
     if(is_night())
         brightness = BRIGHTNESS_LOW;
 
-    tick();
     calculate_next_leds();
     shift_color_all(COLOR_BLACK, current_color());
 }
