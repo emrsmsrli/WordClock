@@ -265,14 +265,14 @@ uint32_t shift_color(uint8_t i, uint8_t N, uint32_t old_color, uint32_t new_colo
 /// \param new_color Color to shift to.
 void shift_color_all(uint32_t old_color, uint32_t new_color) {
     ANIMATE(i, ANIMATION_TIME_MS) {
-        uint32_t b = shift_color(i, ANIMATION_TIME_MS, old_color, new_color);
+        uint32_t shifted = shift_color(i, ANIMATION_TIME_MS, old_color, new_color);
 
-        IT.paint(b);
-        IS.paint(b);
-        pixels.setPixelColor(seconds_led, b);
-        minute_led.paint(b);
-        hour_led.paint(b);
-        oclock_led.paint(b);
+        IT.paint(shifted);
+        IS.paint(shifted);
+        pixels.setPixelColor(seconds_led, shifted);
+        minute_led.paint(shifted);
+        hour_led.paint(shifted);
+        oclock_led.paint(shifted);
 
         pixels.show();
         delayMicroseconds(1000);
