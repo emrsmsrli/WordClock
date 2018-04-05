@@ -145,18 +145,18 @@ LedArray M_25(83, 94);
 LedArray M_30(79, 83);
 
 LedArray H[] = {
-        LedArray(58, 61),    // H_1
-        LedArray(55, 58),    // H_2
-        LedArray(50, 55),    // H_3
-        LedArray(39, 43),    // H_4
-        LedArray(43, 47),    // H_5
-        LedArray(47, 50),    // H_6
-        LedArray(66, 71),    // H_7
-        LedArray(17, 22),    // H_8
-        LedArray(35, 39),    // H_9
-        LedArray(14, 17),    // H_10
-        LedArray(22, 28),    // H_11
-        LedArray(28, 34)     // H_12
+    LedArray(58, 61),    // H_1
+    LedArray(55, 58),    // H_2
+    LedArray(50, 55),    // H_3
+    LedArray(39, 43),    // H_4
+    LedArray(43, 47),    // H_5
+    LedArray(47, 50),    // H_6
+    LedArray(66, 71),    // H_7
+    LedArray(17, 22),    // H_8
+    LedArray(35, 39),    // H_9
+    LedArray(14, 17),    // H_10
+    LedArray(22, 28),    // H_11
+    LedArray(28, 34)     // H_12
 };
 
 uint8_t seconds_led = 1;
@@ -173,13 +173,13 @@ uint8_t brightness = BRIGHTNESS_HIGH;
 
 uint8_t led_color_idx = 0;
 uint32_t colors[] = {
-        pixels.Color(247, 139, 15),     // orange
-        pixels.Color(127, 127, 0),      // yellow
-        pixels.Color(127, 0,   127),    // magenta
-        pixels.Color(0,   127, 127),    // cyan
-        pixels.Color(0,   0,   255),    // blue
-        pixels.Color(0,   255, 0),      // green
-        pixels.Color(255, 0,   0)       // red
+    pixels.Color(247, 139, 15),     // orange
+    pixels.Color(127, 127, 0),      // yellow
+    pixels.Color(127, 0,   127),    // magenta
+    pixels.Color(0,   127, 127),    // cyan
+    pixels.Color(0,   0,   255),    // blue
+    pixels.Color(0,   255, 0),      // green
+    pixels.Color(255, 0,   0)       // red
 };
 
 uint32_t current_color() {
