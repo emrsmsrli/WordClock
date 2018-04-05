@@ -17,8 +17,8 @@
 #define N_COLORS                7
 #define N_SECONDS_LED           5
 
-#define COLOR_BLACK             (uint32_t) 0x000000
-#define COLOR_RED               (uint32_t) 0xFF0000
+#define COLOR_BLACK             static_cast<uint32_t>(0x000000)
+#define COLOR_RED               static_cast<uint32_t>(0xFF0000)
 
 #define BRIGHTNESS_LOW          0x20    // 0.125
 #define BRIGHTNESS_HIGH         0xFF    // 1.000

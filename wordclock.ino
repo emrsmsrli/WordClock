@@ -1,7 +1,7 @@
 #include <EEPROM.h>
 #include <RTClib.h>
 #include <Adafruit_NeoPixel.h>
-#include "wordclock.h"
+#include "wordclock.hpp"
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 
