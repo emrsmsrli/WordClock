@@ -78,7 +78,7 @@ public:
         single_click_action = _single;
         double_click_action = _double;
         pinMode(pin, INPUT);
-        attachInterrupt((uint8_t) digitalPinToInterrupt(pin), _isr, FALLING);
+        attachInterrupt(static_cast<uint8_t>(digitalPinToInterrupt(pin)), _isr, FALLING);
     }
 
     /// Call this method to actually perform click actions
@@ -206,13 +206,13 @@ uint32_t colors[] = {
 /// Returns the currently shown color with adjusted brightness.
 /// \return Current color with brightness.
 uint32_t current_color() {
-    float brightness_mult = brightness / (float)BRIGHTNESS_HIGH;
+    float brightness_mult = brightness / static_cast<float>(BRIGHTNESS_HIGH);
     color c = extract_color(colors[led_color_idx]);
 
     return pixels.Color(
-            (uint8_t)(c.r * brightness_mult),
-            (uint8_t)(c.g * brightness_mult),
-            (uint8_t)(c.b * brightness_mult)
+            static_cast<uint8_t>(c.r * brightness_mult),
+            static_cast<uint8_t>(c.g * brightness_mult),
+            static_cast<uint8_t>(c.b * brightness_mult)
     );
 }
 
@@ -231,8 +231,8 @@ uint32_t current_color() {
 /// \param max The maximum value there can be.
 /// \return Smooth step interpolated value given the parameters.
 uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
-    float v = SMOOTH_STEP(i / (float) N);
-    return (uint8_t) ((max * v) + (min * (1 - v)));
+    float v = SMOOTH_STEP(i / static_cast<float>(N));
+    return static_cast<uint8_t>((max * v) + (min * (1 - v)));
 }
 
 /// Extracts red, green and blue values from an unsigned integer color value.
@@ -240,9 +240,9 @@ uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
 /// \return A \c color struct containing the components of the color.
 color extract_color(uint32_t c) {
     color clr;
-    clr.r = c >> 16;
-    clr.g = c >> 8 & 0xFF;
-    clr.b = c & 0xFF;
+    clr.r = static_cast<uint8_t>(c >> 16);
+    clr.g = static_cast<uint8_t>(c >> 8 & 0xFF);
+    clr.b = static_cast<uint8_t>(c & 0xFF);
     return clr;
 }
 
@@ -298,7 +298,7 @@ void calculate_next_leds() {
     uint8_t min = time.minute();
     uint8_t sec = time.second();
 
-    seconds_led = sec % N_SECONDS_LED + 1;
+    seconds_led = static_cast<uint8_t>(sec % N_SECONDS_LED + 1);
 
     if(min < 5) {                   /// 0 - 5
         oclock_led = O_OCLOCK;
@@ -318,7 +318,7 @@ void calculate_next_leds() {
         else                        // 30 - 35
             minute_led = M_30;
     } else {                        /// 35 - 60
-        hour = hour + 1;
+        hour = static_cast<uint8_t>(hour + 1);
         oclock_led = O_TO;
         if(min < 40)                // 35 - 40
             minute_led = M_25;
@@ -487,7 +487,7 @@ volatile bool Birthday::manual_begin;
 void on_color_button_pressed() {
     uint32_t old_color = current_color();
 
-    led_color_idx = (led_color_idx + 1) % N_COLORS;
+    led_color_idx = static_cast<uint8_t>((led_color_idx + 1) % N_COLORS);
     EEPROM.update(ADDRESS_EEPROM_COLOR, led_color_idx);
 
     shift_color_all(old_color, current_color());
