@@ -43,6 +43,8 @@
 #define SONG_TEMPO              175
 #define SPEE                    5
 
+/// \c color struct for destructuring integer
+/// color values into R, G and B components.
 typedef struct {
     uint8_t r;
     uint8_t g;
