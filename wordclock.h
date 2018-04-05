@@ -26,7 +26,7 @@
 #define BTN_DEBOUNCE_THRESHOLD  50
 #define BTN_CLICK_THRESHOLD     300
 
-#define ANIMATION_TIME_MS       200
+#define ANIMATION_TIME_MS       100
 #define ANIMATE(i, duration)    for(uint8_t (i) = 0; (i) <= (duration); (i)++)
 #define SMOOTH_STEP(x)          ((x) * (x) * (3 - 2 * (x)))
 
