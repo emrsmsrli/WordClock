@@ -451,7 +451,7 @@ void time_isr() {
 }
 
 bool is_night() {
-    return time.hour() > 21 || time.hour() < 7;
+    return time.hour() >= 21 || time.hour() < 7;
 }
 
 void adjust_brightness() {
