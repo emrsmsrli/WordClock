@@ -1,146 +1,10 @@
-#include <EEPROM.h>
-#include <RTClib.h>
-#include <Adafruit_NeoPixel.h>
-#include "wordclock.hpp"
 
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
+#include "wordclock.hpp"
 
 RTC_DS1307 rtc;
 DateTime time;
 TimeSpan ONE_MIN(0, 0, 1, 0);
 TimeSpan ONE_HOUR(0, 1, 0, 0);
-
-/// LedArray class represents an array of leds. It has a start and an end index in the matrix.
-class LedArray {
-    uint8_t start;
-    uint8_t end;
-
-public:
-    LedArray(uint8_t s, uint8_t e) {
-        start = s;
-        end = e;
-    }
-
-    /// Paints the led array to the specified color.
-    /// \param color Color to be painted.
-    void paint(uint32_t color) {
-        for(uint8_t i = start; i < end; ++i) {
-            if(i == UNUSED_LED_FOR_25)
-                continue;
-            pixels.setPixelColor(i, color);
-        }
-    }
-
-    bool operator==(const LedArray& other) {
-        return start == other.start && end == other.end;
-    }
-
-    bool operator!=(const LedArray& other) {
-        return start != other.start || end != other.end;
-    }
-};
-
-/// Button class keeps track of the states of a button and
-/// provides action invoking methods based on the state of the button.
-class Button {
-    /// State of the button
-    enum State {
-        RELEASED = 0,
-        PRESSED,
-        CLICKED_SINGLE,
-        CLICKED_DOUBLE
-    };
-
-    uint8_t pin;
-    uint8_t state;
-    volatile unsigned long start_time;
-    volatile unsigned long stop_time;
-    volatile bool single_clicked;
-    volatile bool double_clicked;
-
-    void(*single_click_action)();
-    void(*double_click_action)();
-
-public:
-    /// Primary constructor of the Button class. <br><br>
-    /// For this project, there will be two buttons named TIME_BUTTON and COLOR_BUTTON.
-    /// \param _pin The pin number of the button on the controller.
-    /// \param _isr The ISR function necessary to keep track of interrupts from the button.
-    /// \param _single The action function which will be invoked when the button is clicked once.
-    /// \param _double The action function which will be invoked when the button is clicked twice.
-    Button(uint8_t _pin, void(*_isr)(), void(*_single)(), void(*_double)() = NULL) {
-        pin = _pin;
-        state = RELEASED;
-        start_time = 0;
-        stop_time = 0;
-        single_clicked = false;
-        double_clicked = false;
-        single_click_action = _single;
-        double_click_action = _double;
-        pinMode(pin, INPUT);
-        attachInterrupt(static_cast<uint8_t>(digitalPinToInterrupt(pin)), _isr, FALLING);
-    }
-
-    /// Call this method to actually perform click actions
-    /// when the button is clicked (usually at the end of the \c loop()).
-    void perform_clicks() {
-        noInterrupts();
-        update();
-        if(single_clicked) {
-            single_clicked = false;
-            interrupts();
-            if(single_click_action) single_click_action();
-        } else if(double_clicked) {
-            double_clicked = false;
-            interrupts();
-            if(double_click_action) double_click_action();
-        } else {
-            interrupts();
-        }
-    }
-
-    /// Updates the state of the button. Should be called in the ISR functions.
-    void update() {
-        unsigned long now = millis();
-        int32_t button_pressed = digitalRead(pin);
-
-        switch(state) {
-            case RELEASED:
-                if(button_pressed) {
-                    if(single_clicked || double_clicked)
-                        break;
-                    state = PRESSED;
-                    start_time = now;
-                }
-                break;
-            case PRESSED:
-                if(!button_pressed && now - start_time < BTN_DEBOUNCE_THRESHOLD)
-                    state = RELEASED;
-                else if(!button_pressed) {
-                    state = CLICKED_SINGLE;
-                    stop_time = now;
-                }
-                break;
-            case CLICKED_SINGLE:
-                if(now - start_time > BTN_CLICK_THRESHOLD) {
-                    single_clicked = true;
-                    state = RELEASED;
-                } else if(button_pressed && now - stop_time > BTN_DEBOUNCE_THRESHOLD) {
-                    state = CLICKED_DOUBLE;
-                    start_time = now;
-                }
-                break;
-            case CLICKED_DOUBLE:
-                if(!button_pressed && now - start_time > BTN_DEBOUNCE_THRESHOLD) {
-                    single_clicked = false;
-                    double_clicked = true;
-                    state = RELEASED;
-                }
-            default:
-                break;
-        }
-    }
-};
 
 Button *TIME_BUTTON;
 Button *COLOR_BUTTON;
@@ -161,18 +25,18 @@ LedArray M_30(79, 83);
 
 /// Array of LedArrays for hours. <br> Mapped as H[i] -> (i+1)th hour.
 LedArray H[] = {
-    LedArray(58, 61),    // H_1
-    LedArray(55, 58),    // H_2
-    LedArray(50, 55),    // H_3
-    LedArray(39, 43),    // H_4
-    LedArray(43, 47),    // H_5
-    LedArray(47, 50),    // H_6
-    LedArray(66, 71),    // H_7
-    LedArray(17, 22),    // H_8
-    LedArray(35, 39),    // H_9
-    LedArray(14, 17),    // H_10
-    LedArray(22, 28),    // H_11
-    LedArray(28, 34)     // H_12
+        LedArray(58, 61),    // H_1
+        LedArray(55, 58),    // H_2
+        LedArray(50, 55),    // H_3
+        LedArray(39, 43),    // H_4
+        LedArray(43, 47),    // H_5
+        LedArray(47, 50),    // H_6
+        LedArray(66, 71),    // H_7
+        LedArray(17, 22),    // H_8
+        LedArray(35, 39),    // H_9
+        LedArray(14, 17),    // H_10
+        LedArray(22, 28),    // H_11
+        LedArray(28, 34)     // H_12
 };
 
 uint8_t seconds_led = 1;
@@ -194,17 +58,15 @@ uint8_t led_color_idx = 0;
 /// Array of colors. Change \c N_COLORS in wordclock.h if
 /// this array changes.
 uint32_t colors[] = {
-    pixels.Color(247, 139, 15),     // orange
-    pixels.Color(127, 127, 0),      // yellow
-    pixels.Color(127, 0,   127),    // magenta
-    pixels.Color(0,   127, 127),    // cyan
-    pixels.Color(0,   0,   255),    // blue
-    pixels.Color(0,   255, 0),      // green
-    pixels.Color(255, 0,   0)       // red
+        pixels.Color(247, 139, 15),     // orange
+        pixels.Color(127, 127, 0),      // yellow
+        pixels.Color(127, 0, 127),    // magenta
+        pixels.Color(0, 127, 127),    // cyan
+        pixels.Color(0, 0, 255),    // blue
+        pixels.Color(0, 255, 0),      // green
+        pixels.Color(255, 0, 0)       // red
 };
 
-/// Returns the currently shown color with adjusted brightness.
-/// \return Current color with brightness.
 uint32_t current_color() {
     float brightness_mult = brightness / static_cast<float>(BRIGHTNESS_HIGH);
     color c = extract_color(colors[led_color_idx]);
@@ -216,28 +78,11 @@ uint32_t current_color() {
     );
 }
 
-/// Implementation of the smooth step interpolation. <br>
-/// Use this in loops. For example:
-/// \code
-///     for(uint8_t i = 0; i <= LENGTH; i++) {
-///         uint8 interpolated = smooth_step(i, LENGTH, 0, 1);
-///         ...
-///     }
-/// \endcode <br>
-/// divides 0..1 region into LENGTH pieces according to smooth step rules.
-/// \param i Current iteration count.
-/// \param N Total iteration count.
-/// \param min The minimum value there can be.
-/// \param max The maximum value there can be.
-/// \return Smooth step interpolated value given the parameters.
 uint8_t smooth_step(uint8_t i, uint8_t N, uint8_t min, uint8_t max) {
     float v = SMOOTH_STEP(i / static_cast<float>(N));
     return static_cast<uint8_t>((max * v) + (min * (1 - v)));
 }
 
-/// Extracts red, green and blue values from an unsigned integer color value.
-/// \param c Color to extract.
-/// \return A \c color struct containing the components of the color.
 color extract_color(uint32_t c) {
     color clr;
     clr.r = static_cast<uint8_t>(c >> 16);
@@ -246,12 +91,6 @@ color extract_color(uint32_t c) {
     return clr;
 }
 
-/// Shifts the color from \c old_color to \c new_color by \c N smooth steps.
-/// \param i Current iteration count.
-/// \param N Total iteration count.
-/// \param old_color Color to shift from.
-/// \param new_color Color to shift to.
-/// \return Shifted color in iteration \c i th iteration.
 uint32_t shift_color(uint8_t i, uint8_t N, uint32_t old_color, uint32_t new_color) {
     color c_old = extract_color(old_color);
     color c_new = extract_color(new_color);
@@ -260,9 +99,6 @@ uint32_t shift_color(uint8_t i, uint8_t N, uint32_t old_color, uint32_t new_colo
                         smooth_step(i, N, c_old.b, c_new.b));
 }
 
-/// Shifts all the lit LedArrays on the board.
-/// \param old_color Color to shift from.
-/// \param new_color Color to shift to.
 void shift_color_all(uint32_t old_color, uint32_t new_color) {
     ANIMATE(i, ANIMATION_TIME_MS) {
         uint32_t shifted = shift_color(i, ANIMATION_TIME_MS, old_color, new_color);
@@ -279,12 +115,10 @@ void shift_color_all(uint32_t old_color, uint32_t new_color) {
     }
 }
 
-/// Retrieves the current time from the RTC circuit
 void tick() {
     time = rtc.now();
 }
 
-/// Saves the current lit LedArrays for dimming.
 inline void save_last_leds() {
     last_second_led = seconds_led;
     last_minute_led = minute_led;
@@ -292,7 +126,6 @@ inline void save_last_leds() {
     last_oclock_led = oclock_led;
 }
 
-/// Calculates the next LedArrays for brightening.
 void calculate_next_leds() {
     uint8_t hour = time.hour();
     uint8_t min = time.minute();
@@ -337,7 +170,6 @@ void calculate_next_leds() {
     hour_led = H[hour];
 }
 
-/// Brightens and dims calculated next and previous leds.
 void display_time() {
     bool no_led_changed = true;
     uint32_t color = current_color();
@@ -420,10 +252,10 @@ class Birthday {
                             NOTE_G, NOTE_G, NOTE_x, NOTE_e, NOTE_c, NOTE_B, NOTE_A, NOTE_REST,
                             NOTE_y, NOTE_y, NOTE_e, NOTE_c, NOTE_d, NOTE_c};
         uint16_t beats[] = {2, 2, 8, 8, 8, 16, 1, 2, 2, 8, 8, 8, 16, 1,
-                            2, 2, 8, 8, 8 ,8, 16, 1, 2, 2, 8, 8, 8, 16};
+                            2, 2, 8, 8, 8, 8, 16, 1, 2, 2, 8, 8, 8, 16};
         uint16_t spee_mult = SONG_TEMPO / SPEE;
-        for (int i = 0; i < 28; i++) {
-            if (!notes[i]) delay(beats[i] * SONG_TEMPO);
+        for(int i = 0; i < 28; i++) {
+            if(!notes[i]) delay(beats[i] * SONG_TEMPO);
             else play_note(notes[i], beats[i] * spee_mult);
             delay(SONG_TEMPO);
         }
@@ -458,8 +290,8 @@ public:
     /// the date is 12/05 and time is 9 am, 1 pm or 6 pm, \c false otherwise.
     static bool is_today() {
         return manual_begin || (time.day() == 4 && time.month() == 11
-                && (time.hour() == 8 || time.hour() == 12 || time.hour() == 17)
-                && time.minute() == 0 && time.second() == 0);
+                                && (time.hour() == 8 || time.hour() == 12 || time.hour() == 17)
+                                && time.minute() == 0 && time.second() == 0);
     }
 
     /// Begins the birthday mode. Changes the board schema to a big heart and plays "Happy Birthday To You" song.
@@ -483,7 +315,6 @@ bool Birthday::begun;
 volatile bool Birthday::cancelled;
 volatile bool Birthday::manual_begin;
 
-/// Action function for color button single click.
 void on_color_button_pressed() {
     uint32_t old_color = current_color();
 
@@ -493,25 +324,21 @@ void on_color_button_pressed() {
     shift_color_all(old_color, current_color());
 }
 
-/// Action function for color button double click.
 void on_color_button_double_pressed() {
     if(!Birthday::begun)
         Birthday::manual_begin = true;
 }
 
-/// Action function for time button single click.
 void on_time_button_pressed() {
     rtc.adjust(time + ONE_MIN);
     tick();
 }
 
-/// Action function for time button double click.
 void on_time_button_double_pressed() {
     rtc.adjust(time + ONE_HOUR);
     tick();
 }
 
-/// Color button ISR function.
 void color_isr() {
     if(Birthday::begun && !Birthday::cancelled)
         Birthday::cancelled = true;
@@ -519,7 +346,6 @@ void color_isr() {
         COLOR_BUTTON->update();
 }
 
-/// Time button ISR function.
 void time_isr() {
     if(Birthday::begun && !Birthday::cancelled)
         Birthday::cancelled = true;
@@ -527,13 +353,10 @@ void time_isr() {
         TIME_BUTTON->update();
 }
 
-/// Returns the time being night status.
-/// \return \c true if it is night now (between 10pm and 8am), \c false otherwise.
 bool is_night() {
     return time.hour() >= 21 || time.hour() < 7;
 }
 
-/// Checks whether it is night or not and adjusts brightness accordingly.
 void adjust_brightness() {
     uint8_t old_brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
     uint32_t old_color = current_color();
