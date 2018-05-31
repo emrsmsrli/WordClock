@@ -67,6 +67,10 @@ uint32_t colors[] = {
         pixels.Color(255, 0, 0)       // red
 };
 
+void delay_short() {
+    delayMicroseconds(DELAY_SHORT_US);
+}
+
 uint32_t current_color() {
     float brightness_mult = brightness / static_cast<float>(BRIGHTNESS_HIGH);
     color c = extract_color(colors[led_color_idx]);
@@ -111,7 +115,7 @@ void shift_color_all(uint32_t old_color, uint32_t new_color) {
         oclock_led.paint(shifted);
 
         pixels.show();
-        delayMicroseconds(1000);
+        delay_short();
     }
 }
 
@@ -208,7 +212,7 @@ void display_time() {
             break;
 
         pixels.show();
-        delayMicroseconds(900);
+        delay_short();
     }
 }
 
@@ -228,7 +232,7 @@ class Birthday {
             for(uint8_t h_l = 0; h_l < 22; ++h_l)
                 pixels.setPixelColor(heart[h_l], shift);
             pixels.show();
-            delayMicroseconds(1000);
+            delay_short();
         }
         delay(dly);
     }
@@ -274,7 +278,7 @@ public:
         shift_color_heart(COLOR_BLACK, COLOR_RED, 500);
         play_happy_birthday();
         for(uint16_t i = 0; i < 10800; ++i) {
-            delay(950);
+            delay_short();
             if(cancel()) break;
         }
         shift_color_heart(COLOR_RED, COLOR_BLACK, 0);

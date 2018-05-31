@@ -24,6 +24,8 @@
 #define ANIMATE(i, duration)    for(uint8_t (i) = 0; (i) <= (duration); (i)++)
 #define SMOOTH_STEP(x)          ((x) * (x) * (3 - 2 * (x)))
 
+#define DELAY_SHORT_US          800
+
 /// \c color struct for destructuring integer
 /// color values into R, G and B components.
 typedef struct {
@@ -106,5 +108,8 @@ bool is_night();
 
 /// Checks whether it is night or not and adjusts brightness accordingly.
 void adjust_brightness();
+
+/// Delays execution a short amount of time.
+void delay_short();
 
 #endif //WORDCLOCK_CONSTS_H
