@@ -3,6 +3,7 @@
 
 RTC_DS1307 rtc;
 DateTime time;
+uint32_t total_accuracy_secs;
 TimeSpan ONE_MIN(0, 0, 1, 0);
 TimeSpan ONE_HOUR(0, 1, 0, 0);
 
@@ -363,6 +364,10 @@ void setup() {
 
     tick();
 
+    // total_accuracy_secs = time.unixtime();
+    // EEPROM.put(ADDRESS_EEPROM_SECS, total_accuracy_secs);
+    EEPROM.get(ADDRESS_EEPROM_SECS, total_accuracy_secs);
+
     brightness = EEPROM.read(ADDRESS_EEPROM_BRIGHTN);
     if(brightness != BRIGHTNESS_LOW || brightness != BRIGHTNESS_HIGH)
         brightness = BRIGHTNESS_HIGH;
@@ -375,6 +380,12 @@ void setup() {
 
 void loop() {
     tick();
+
+    uint32_t unix_time = time.unixtime();
+    if(unix_time != total_accuracy_secs && (time - DateTime(total_accuracy_secs)).days() == 30) {
+        total_accuracy_secs = unix_time;
+        EEPROM.put(ADDRESS_EEPROM_SECS, total_accuracy_secs);
+    }
 
     if(Birthday::is_today()) {
         Birthday::celebrate();
