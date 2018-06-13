@@ -2,8 +2,7 @@
 #ifndef WORDCLOCK_CONSTS_H
 #define WORDCLOCK_CONSTS_H
 
-#include <EEPROM.h>
-#include <RTClib.h>
+#include <RTClib/RTClib.h>
 #include "Arduino.h"
 #include "Button.hpp"
 #include "LedArray.hpp"

@@ -9,7 +9,7 @@
 #define COLOR_BLACK             static_cast<uint32_t>(0x000000)
 #define COLOR_RED               static_cast<uint32_t>(0xFF0000)
 
-#include <Adafruit_NeoPixel.h>
+#include <Adafruit_NeoPixel/Adafruit_NeoPixel.h>
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(N_PIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
 

@@ -1,5 +1,6 @@
 
 #include "wordclock.hpp"
+#include "EEPROM.h"
 
 RTC_DS1307 rtc;
 DateTime time;
