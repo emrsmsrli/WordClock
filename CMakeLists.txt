@@ -5,11 +5,9 @@ project(${PROJECT_NAME})
 
 set(${CMAKE_PROJECT_NAME}_SKETCH wordclock.ino)
 
-#### Uncomment below additional settings as needed.
-# set(${CMAKE_PROJECT_NAME}_BOARD mega)
-# set(${CMAKE_PROJECT_NAME}_PORT /dev/ttyACM0)
-# set(mega.build.mcu atmega2560)
-# set(mega.upload.protocol wiring)
-# set(mega.upload.speed 115200)
-
-generate_arduino_firmware(${CMAKE_PROJECT_NAME})
+generate_arduino_firmware(${CMAKE_PROJECT_NAME}
+        SRCS wordclock.ino Button.cpp LedArray.cpp Music.cpp
+        HDRS wordclock.hpp Button.hpp LedArray.hpp Music.h
+        BOARD uno
+        PORT COM7
+        PROGRAMMER avrisp)
