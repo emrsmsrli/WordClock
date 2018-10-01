@@ -1,0 +1,134 @@
+Three major components go into building this clock:
+
+The Electrical - this keeps track of the time, changes the colour and makes it glow all pretty. This is made of the ‘PCB’ (Printed Circuit Board), microcontroller and power via USB.
+The Mechanical - This is responsible for its structure and preventing the light seeping into other letters. Its mainly made of the ‘baffle’ and a backing plate.
+The Face - To get the face done nicely we use a vinyl sticker with frosting. Out of all the methods I’ve found this to work the best. The face is responsible for the letters appearing crisp and readable.
+Next, we collect all the parts!
+
+Gather the following parts:
+
+
+
+Mechanical:
+
+Acrylic for internal structure - 2mm black opaque acrylic sheet 16.5 inches (420mm) by 28.3 inches (720mm). This will need to be laser cut later. There are a variety of local laser cutting workshops available to do this.
+Ikea Ribba frame (9inch / 23cm square), either black or white http://www.ikea.com/us/en/catalog/products/60078034/#/00078032 This will be our outside frame.
+Electrical:
+The following parts below are needed. Note: the lithium battery is not normally included due to flight restrictions.
+
+Bill Of Materials (BoM) (see attached image)
+
+PCB and Schematic: (see attached images)
+
+-Attached is the Eagle schematic and board. As well as the GERBER files needed to get the board produced at a PCB house.
+
+Face: The face is to be cut out of vinyl adhesive. An additional ‘frosting’ layer is added to diffuse the light. (see attachment)
+
+Code: Code is attached (*.ino) this can be uploaded using the Arduino uploader.
+You will need:
+
+Parts:
+
+PCB and all electronic components listed in the Bill of Materials (BoM)
+Tools:
+
+Soldering Iron
+Safety Glasses
+Solder
+Side Cutters
+Assembling the main Printed Circuit Board (PCB)
+
+Following the BoM, solder each of the components.
+
+It is best to start with the IC holders (IC1-DIP, IC2-DIP). This ensures it is all flat. Note the notch and align to this.
+Resistors are the next step. Identify them using the colour band codes listed in the BoM.
+Install capacitors C1 and C2
+Solder the three pin resonator. There is no polarisation/wrong way of putting this.
+Install the 32kHz crystal at Y2. No polarisation. Leave enough leg space for bending.
+Optional: Green LED D3 can now be installed. This indicates data transfer when uploading code.
+D2 Red LED can be skipped as it might shine through at night time creating an unwanted glow.
+Screw terminals can now be installed. Note that the opening must face the outside of the board.
+JP3 and the FTDI programming header are optional
+C3 Large capacitor has a polarisation. Note the long and short leg, also the white line (opposite side then photographed) The negative (short+white band) goes on the outer edge, the diagram also matches (colored in bar on the silk screen).
+The two buttons are to be installed on the back side. This is so they poke through the back holes.
+You can now install the ICs. Nore the notch that must line up. In this picture the notches are far left on each.
+Now we can add the standoffs
+Place the post though the bottom and nut over the top. It works best if you hold the nut and screw the post into it from the under side.
+Posts are now complete.
+Cut the USB cable on the mini/micro side as we are keeping the large USB plug to power the device.
+Pull back the woven braid and expose the wires inside.
+Discard the white and green wires as we only need red (positive) and black (negative)
+Add heat shrink as to prevent the braid from running away
+Connect the power cable to the main PCB as seen here. We are now done with the PCB for now.
+Please see the corrections if you have Version 1.2 below
+Fixes in Version 1.2
+
+Fix 1: Jumper JP3 pin and switch pin shown below. This corrects power only being routed to a portion of the board. Best to do this after all soldering so the switch is unobstructed.
+Fix 2: Note that Version 1.2 incorrectly labeled the Light port. Light strip labeling is as below, looking from the top, Left to Right: Negative (Black), Positive (Red), Data (Yellow)
+Attached are the items for laser cutting the baffle and back plate. There is an SCAD model allowing you to change the size of the clock. Also an SVG with one of each item.
+
+After laser cutting the parts you will now have:
+
+10 Full beams
+10 Beams with a notch
+1 Backplate
+The job now is to line up the RGB light strips onto the back panel.
+
+Place the panel down so that the centre notch is at the bottom and that the text is not showing.
+
+Let us start with the end in mind
+
+This is what we will end up with.
+
+NOTE: The arrows indicate the direction of data and must line up with the arrows on the strips
+
+NOTE: Note how the strips fall with respect to the notches on the side. The first one is above the top notch.
+
+Let’s look at the strip closely before we start.
+
+Each LED strip has three contacts.
+
+GND - Ground,
+
+D - Data (In/Out) and
+
++5V - 5 volt power
+
+And little arrows pointing the direction. It is important that the arrows follow that of the previous picture. The data exits the PCB bottom left and snakes all the way to the top. It is our job now to A) stick the strips down correctly and then B) connect the outputs of one to the correct imports of the next strip. So let’s begin.
+
+Starting at the top, hold a full beam over the notches as shown here:
+
+Now you can start to see the alignment of the leds. Starting at the top, the first let strip needs to have the arrow point (direction of data) LEFT, this is important. The first top strip is placed ABOVE the holes in the board. Compare to the main image to see that this is correct.
+
+Using the horizontal bar and its notches to line up the leds, make it so that when the baffle is in place that the leds fall in the middle.
+
+We will end up with this seen above.
+
+Continue to add a row at a time, making sure the notches line up with the gold pads. The notches are where the vertical struts will go.
+
+Continue this process until all 10 rows are placed. Note that there is no LEDs on the bottom row. This is where we keep the electronics.
+
+Before we can assemble the baffle we will need to solder the LED strips together in a particular fashion.
+
+Data to Data, Power to Power, Ground to Ground. You will need to solder in such a way that the notch in the full beam allows the wires to pass through without too much fuss. Use the beam to test as you go. This part takes some time so take breaks. We are getting there!
+
+We can now screw down the PCB. The buttons will become available on the back.
+
+Now solder a short 10 cm length to the very last one. This is where data and power will enter.
+
+You will now need to add a battery to the system. This is required else the Real Time Clock (RTC) will give spurious outputs.
+
+At this point we can test the whole system. Plug in the USB cable. The top left lights (positions 1,2, 4,5) should light up (IT IS). If they don’t trace back the system. Since it works as a string all previous segments must be ok. When this is proven, and you can adjust the lights from the buttons at the back, then we can move forward.
+Remove the paper from the baffles, take care when removing the paper not to break any though this is an internal part and will not effect final performance. Now we can add all the horizontal baffles. Align the notch with the wire and then click into the base.
+
+The vertical baffles can now be added. Note that the cut out section goes to the bottom to allow space for the PCB.
+
+Holding the USB cable at the notch to exit this is a good point to add hot glue to hold it in pace.
+
+Closing it up:
+
+You can now place the face on top of the baffle, note the PCB is the bottom left.
+
+Slide the frame over the top, close the tabs and you are done. This may be right so be patient.
+
+Congratulations on your magnificent build.

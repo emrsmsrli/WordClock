@@ -1,0 +1,1 @@
+avrdude -C "..\avrdude.conf" -P COM7 -b 19200 -c avrisp -p m328p -u -U flash:w:"../wordclock.ino.hex":i
