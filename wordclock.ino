@@ -5,6 +5,7 @@
 RTC_DS1307 rtc;
 DateTime time;
 uint32_t total_accuracy_secs;
+TimeSpan ONE_SEC(0, 0, 0, 1);
 TimeSpan ONE_MIN(0, 0, 1, 0);
 TimeSpan ONE_HOUR(0, 1, 0, 0);
 
@@ -293,6 +294,11 @@ bool Birthday::begun;
 volatile bool Birthday::cancelled;
 volatile bool Birthday::manual_begin;
 
+void add_time(TimeSpan ts) {
+	rtc.adjust(time + ts);
+	tick();
+}
+
 void on_color_button_pressed() {
     uint32_t old_color = current_color();
 
@@ -308,13 +314,11 @@ void on_color_button_double_pressed() {
 }
 
 void on_time_button_pressed() {
-    rtc.adjust(time + ONE_MIN);
-    tick();
+	add_time(ONE_MIN);
 }
 
 void on_time_button_double_pressed() {
-    rtc.adjust(time + ONE_HOUR);
-    tick();
+    add_time(ONE_HOUR);
 }
 
 void color_isr() {
@@ -383,9 +387,10 @@ void loop() {
     tick();
 
     uint32_t unix_time = time.unixtime();
-    if(unix_time != total_accuracy_secs && (time - DateTime(total_accuracy_secs)).days() == 30) {
+    if(unix_time != total_accuracy_secs && (time - DateTime(total_accuracy_secs)).hours() == 1) {
         total_accuracy_secs = unix_time;
         EEPROM.put(ADDRESS_EEPROM_SECS, total_accuracy_secs);
+		add_time(ONE_SEC);
     }
 
     if(Birthday::is_today()) {

@@ -84,6 +84,9 @@ void calculate_next_leds();
 /// Brightens and dims calculated next and previous leds.
 void display_time();
 
+/// Adds a certain amount of time to the current clock.
+void add_time(TimeSpan ts)
+
 /// Action function for color button single click.
 void on_color_button_pressed();
 
