@@ -8,9 +8,10 @@
 #include "LedArray.hpp"
 #include "Music.h"
 
+// #define FIRST_TIME_RUN
+
 #define ADDRESS_EEPROM_COLOR    0x0
 #define ADDRESS_EEPROM_BRIGHTN  0x4
-#define ADDRESS_EEPROM_SECS     0x8
 #define PIN_TIME_BUTTON         PIN3
 #define PIN_COLOR_BUTTON        PIN2
 
