@@ -26,8 +26,9 @@ LedArray M_20(83, 89);
 LedArray M_25(83, 94);
 LedArray M_30(79, 83);
 
-/// Array of LedArrays for hours. <br> Mapped as H[i] -> (i+1)th hour.
+/// Array of LedArrays for hours.
 LedArray H[] = {
+        LedArray(28, 34)     // H_12
         LedArray(58, 61),    // H_1
         LedArray(55, 58),    // H_2
         LedArray(50, 55),    // H_3
@@ -39,7 +40,6 @@ LedArray H[] = {
         LedArray(35, 39),    // H_9
         LedArray(14, 17),    // H_10
         LedArray(22, 28),    // H_11
-        LedArray(28, 34)     // H_12
 };
 
 uint8_t seconds_led = 1;
