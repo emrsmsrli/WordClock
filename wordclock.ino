@@ -267,8 +267,8 @@ public:
     /// \return \c true if birthday mode is manually activated or
     /// the date is 12/05 and time is 9 am, 1 pm or 6 pm, \c false otherwise.
     static bool is_today() {
-        return manual_begin || (time.day() == 4 && time.month() == 11
-                                && (time.hour() == 8 || time.hour() == 12 || time.hour() == 17)
+        return manual_begin || (time.day() == 6 && time.month() == 12
+                                && (time.hour() == 6 || time.hour() == 13 || time.hour() == 21)
                                 && time.minute() == 0 && time.second() == 0);
     }
 
